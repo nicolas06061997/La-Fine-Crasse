@@ -389,16 +389,50 @@ const dep=new THREE.Mesh(new THREE.RingGeometry(4.2,4.6,32),new THREE.MeshBasicM
 // déchets
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
 const cyl=(r,h,c)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,10),M(c));m.position.y=h/2;return m};
+// modèles détaillés des déchets (géométries partagées pour rester léger)
+const TGC={},CYG=(a,b,h,n=14)=>TGC['c'+a+b+h+n]||(TGC['c'+a+b+h+n]=new THREE.CylinderGeometry(a,b,h,n)),
+ tc=(a,b,h,c,x,y,z,n)=>{const m=new THREE.Mesh(CYG(a,b,h,n),M(c));m.position.set(x,y,z);return m},
+ GLM=c=>MC['g'+c]||(MC['g'+c]=new THREE.MeshPhysicalMaterial({color:ds(c),roughness:.08,metalness:0,transmission:0,transparent:true,opacity:.82,clearcoat:1})),
+ MTM=c=>MC['m'+c]||(MC['m'+c]=new THREE.MeshStandardMaterial({color:ds(c),roughness:.3,metalness:.85})),
+ PAPG=jit(new THREE.IcosahedronGeometry(.13,1),.32),BAGG=jit(new THREE.SphereGeometry(.3,14,10),.12),
+ TIREG=new THREE.TorusGeometry(.36,.16,12,26),TREADG=new THREE.TorusGeometry(.36,.165,4,26);
 const T=[
- ()=>({v:1,m:(()=>{const o=cyl(.12,.5,pick([0x2e8b57,0x8b5a2b,0xbcd]));o.rotation.z=1.4;o.position.y=.12;return o})()}),
- ()=>({v:1,m:cyl(.12,.28,pick([0xcccccc,0xd32f2f,0x1976d2]))}),
- ()=>({v:1,m:box(.45,.05,.35,0xf5f5f5,0,.03,0)}),
- ()=>({v:1,m:(()=>{const o=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),M(0x222));o.scale.y=.8;o.position.y=.2;return o})()}),
- ()=>({v:2,m:(()=>{const o=new THREE.Group();o.add(box(.8,.12,.8,0x8d6e63,0,.6,0),box(.8,.8,.12,0x8d6e63,0,1,-.4),box(.1,.6,.1,0x5d4037,-.3,.3,.3),box(.1,.6,.1,0x5d4037,.3,.3,.3));return o})()}),
- ()=>({v:2,m:(()=>{const o=new THREE.Group();o.add(box(2,.5,.9,0x7b5aa6,0,.4,0),box(2,.6,.25,0x6a4a96,0,.8,-.4));return o})()}),
- ()=>({v:2,m:(()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.45,.2,8,16),M(0x151515));o.rotation.x=Math.PI/2;o.position.y=.2;return o})()}),
- ()=>({v:2,m:box(1,.8,.8,0xc8a165,0,.4,0)}),
- ()=>({v:2,m:box(.8,1.6,.7,0xf0f0f0,0,.8,0)})
+ // bouteille couchée : corps, épaule, goulot, bouchon, étiquette
+ ()=>({v:1,m:(()=>{const o=new THREE.Group(),c=pick([0x2e8b57,0x8b5a2b,0x9fd3e6]),g=GLM(c),b=new THREE.Group();
+  const body=new THREE.Mesh(CYG(.09,.09,.3),g),sh2=new THREE.Mesh(CYG(.035,.09,.08),g),nk=new THREE.Mesh(CYG(.033,.035,.09),g);body.position.y=.15;sh2.position.y=.34;nk.position.y=.425;
+  b.add(body,sh2,nk,tc(.037,.037,.035,pick([0xd32f2f,0xffffff,0x1976d2]),0,.48,0,10),tc(.092,.092,.11,pick([0xffd23f,0xf5f5f5,0xe53935]),0,.16,0));b.rotation.z=Math.PI/2;b.position.set(.2,.09,0);o.add(b);return o})()}),
+ // canette écrasée : cylindre coloré, bords métalliques, languette
+ ()=>({v:1,m:(()=>{const o=new THREE.Group(),c=pick([0xd32f2f,0x1976d2,0x2e7d32,0xffb300,0x8e24aa]),k=new THREE.Group();
+  k.add(tc(.065,.065,.17,c,0,.085,0),new THREE.Mesh(CYG(.058,.065,.02),MTM(0xd8d8d8)),tc(.066,.066,.025,0xf2f2f2,0,.11,0));k.children[1].position.y=.18;{const tp=new THREE.Mesh(CYG(.05,.058,.012),MTM(0xc8c8c8));tp.position.y=.195;k.add(tp)}
+  k.scale.set(1,rnd(.55,1),1);k.rotation.z=Math.random()<.6?Math.PI/2:0;k.position.y=k.rotation.z?.065:0;o.add(k);return o})()}),
+ // papiers : boule froissée + journal plié
+ ()=>({v:1,m:(()=>{const o=new THREE.Group(),p=new THREE.Mesh(PAPG,M(0xf4f1e6));p.position.set(-.1,.11,0);p.scale.set(1,.85,1.1);const j=new THREE.Group();j.add(box(.42,.015,.3,0xe8e4d8,0,0,0),box(.32,.017,.04,0x555555,0,.002,-.08),box(.32,.017,.02,0x888888,0,.002,0),box(.32,.017,.02,0x888888,0,.002,.06));j.position.set(.16,.02,.05);j.rotation.set(0,.4,.08);o.add(p,j);return o})()}),
+ // sac poubelle noir noué
+ ()=>({v:1,m:(()=>{const o=new THREE.Group(),m=MC.bag||(MC.bag=new THREE.MeshStandardMaterial({color:0x151518,roughness:.35,metalness:.1})),b=new THREE.Mesh(BAGG,m);b.scale.set(1,.9,.95);b.position.y=.27;
+  const k=new THREE.Mesh(CYG(.03,.07,.12,8),m);k.position.y=.56;const e1=new THREE.Mesh(CYG(.01,.04,.1,6),m),e2=e1.clone();e1.position.set(-.05,.63,0);e1.rotation.z=.7;e2.position.set(.05,.63,0);e2.rotation.z=-.7;o.add(b,k,e1,e2);return o})()}),
+ // chaise : 4 pieds, assise, dossier à barreaux, traverses
+ ()=>({v:2,m:(()=>{const o=new THREE.Group(),W=pick([0x8d6e63,0x6d4c41,0xa1887f]),D=0x5d4037;
+  for(const x of[-.26,.26])for(const z of[-.24,.24])o.add(box(.06,.48,.06,D,x,.24,z));
+  o.add(box(.62,.06,.58,W,0,.5,0),box(.06,.55,.06,D,-.26,.8,-.24),box(.06,.55,.06,D,.26,.8,-.24),box(.58,.1,.05,W,0,1.03,-.24),box(.05,.38,.04,W,-.1,.74,-.24),box(.05,.38,.04,W,.1,.74,-.24),box(.52,.04,.04,D,0,.16,.24),box(.52,.04,.04,D,0,.16,-.24));
+  o.rotation.z=Math.random()<.35?1.5:0;if(o.rotation.z)o.position.y=.31;return o})()}),
+ // canapé : pieds, socle, coussins, dossier, accoudoirs
+ ()=>({v:2,m:(()=>{const o=new THREE.Group(),c=pick([0x7b5aa6,0x8d4f3a,0x50707a,0x6b7b3a]),cd=new THREE.Color(c).multiplyScalar(.8).getHex();
+  for(const x of[-.85,.85])for(const z of[-.32,.32])o.add(box(.08,.12,.08,0x3e2723,x,.06,z));
+  o.add(box(1.9,.28,.85,cd,0,.26,0),box(.84,.17,.66,c,-.43,.48,.07),box(.84,.17,.66,c,.43,.48,.07),box(1.9,.55,.22,cd,0,.66,-.33),box(.78,.42,.14,c,-.43,.68,-.2),box(.78,.42,.14,c,.43,.68,-.2),box(.2,.42,.85,cd,-.95,.52,0),box(.2,.42,.85,cd,.95,.52,0));
+  o.rotation.y=rnd(-.3,.3);return o})()}),
+ // pneu couché : gomme, sculptures, jante
+ ()=>({v:2,m:(()=>{const o=new THREE.Group(),t=new THREE.Mesh(TIREG,M(0x1b1b1b)),tr=new THREE.Mesh(TREADG,M(0x0d0d0d));t.rotation.x=tr.rotation.x=Math.PI/2;t.position.y=tr.position.y=.17;
+  const r=tc(.25,.25,.2,0x9ea3a8,0,.17,0,18);r.material=MTM(0xb0b4b8);o.add(t,tr,r,tc(.08,.08,.22,0x555555,0,.17,0,10));return o})()}),
+ // carton ouvert : rabats, scotch, marquage
+ ()=>({v:2,m:(()=>{const o=new THREE.Group(),C=0xc8a165,C2=0xb08a50;o.add(box(.9,.6,.7,C,0,.3,0),box(.92,.62,.08,0xd9b779,0,.3,.31),box(.12,.005,.72,0xe8d7a8,0,.605,0));
+  const f1=box(.9,.02,.33,C2,0,0,0),f2=f1.clone();f1.position.set(0,.68,.43);f1.rotation.x=-.9;f2.position.set(0,.68,-.43);f2.rotation.x=.9;const f3=box(.02,.3,.7,C2,.53,.72,0),f4=f3.clone();f3.rotation.z=-.5;f4.position.x=-.53;f4.rotation.z=.5;
+  o.add(f1,f2,f3,f4,box(.25,.15,.01,0x333333,-.2,.38,.355));o.rotation.y=rnd(0,6.28);return o})()}),
+ // frigo : caisse arrondie, congélateur + porte, joints, poignées, grille, pieds
+ ()=>({v:2,m:(()=>{const o=new THREE.Group(),W=0xeef1f3,H=MTM(0xb7bcc2);
+  o.add(box(.74,1.62,.68,W,0,.87,0),box(.72,.5,.05,0xf7f8f9,0,1.4,.36),box(.72,1.02,.05,0xf7f8f9,0,.6,.36),box(.73,.025,.04,0x6b7075,0,1.135,.37),box(.7,.05,.02,0x3a3d40,0,.08,.35));
+  const h1=new THREE.Mesh(RB(.04,.32,.05),H),h2=new THREE.Mesh(RB(.04,.42,.05),H);h1.position.set(-.29,1.32,.41);h2.position.set(-.29,.84,.41);o.add(h1,h2);
+  for(const x of[-.3,.3])for(const z of[-.26,.26])o.add(tc(.03,.03,.06,0x333333,x,.03,z,8));
+  o.add(box(.2,.06,.01,0x4a90d9,.18,1.55,.385));if(Math.random()<.4){o.rotation.x=-1.52;o.position.y=.36;o.position.z=0}else o.rotation.z=rnd(-.08,.08);return o})()})
 ];
 const items=[];let nextZ=-2;
 function spawn(){if(inDepot(nextZ)){scenery(nextZ);nextZ-=6;return}const nc=cnts(Math.floor(-nextZ/300))[(-nextZ-2)/6]|0;for(let i=0;i<nc;i++){const t=Math.random()<.02?CHEST:Math.random()<.04?BARREL:Math.random()<.04?GOLD:Math.random()<.65?pick(T.slice(0,4)):pick(T.slice(4));const o=t();const side=Math.random()<.5?-1:1;
@@ -508,7 +542,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-10-30.3";
+var APPV="2026-10-30.4";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
