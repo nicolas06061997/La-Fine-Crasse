@@ -20,7 +20,7 @@ L'utilisateur parle français et n'est pas développeur : réponses courtes, en 
 2. **Boutique** : tableau `SHOP` (réinitialisé par `SHOP.length=0;SHOP.push(...)`), rendu par `render()`.
 3. **Scène** : renderer, lumières, ciel (dôme), sols, route, joueur (`P`), véhicule (`CAR`, `buildCar()`).
 4. **Virages** : patch de shader (`THREE.Material.prototype.onBeforeCompile`, uniforms `BU`, `BT`). La logique reste en ligne droite sur l'axe -Z.
-5. **Zones** : 300 m chacune (`biomeOf(z)` : campagne, plage, montagne, autoroute). `NM(m)=50+25*m` déchets. `buildBounds(m)`, `mapDoneUI()`, `goMap()`.
+5. **Zones** : 300 m chacune (`biomeOf(z)` : campagne, plage, montagne, autoroute, forêt, zone industrielle ; noms `BNAME`, musique transposée `MTR`). `NM(m)=50+25*m` déchets. `buildBounds(m)`, `mapDoneUI()`, `goMap()`.
 6. **Décor** : `scenery(z)` appelé par `spawn()` tous les 6 m ; `tree()`, `palm()`, `grass()`, `tufts()`, `town()`, `depot()`, `wareBuild()`.
 7. **Déchets** : `T`, `GOLD`, `CHEST`, `BARREL`, bonus `mkPw()`.
 8. **Boucle** : `loop()` puis rendu `COMP` (post-traitement) ou `R.render`.
@@ -29,6 +29,8 @@ Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mis
 10. **Personnages** : liste `CHARS` (fichiers `models/*.glb` convertis depuis des FBX Mixamo : FBXLoader + GLTFExporter dans Chromium, textures réduites en JPEG, puis gltf-transform dedup/weld/quantize) + `models/anims.glb` (idle/run du X Bot, squelette seul) + `models/marche.glb` (marche « Strut Walking » Mixamo, sur place), adaptées par `retarget()` ; chargement `loadHero(i)`, taille réglée sur l'os de la tête. Écran « Choisis ton personnage » : `FOPT`, `buildFace()`, `faceUI()` (bouton 🧑 ou appui sur le personnage). Vêtements repeints par `paintTop()`/`repaint2()`. À vélo : `pedal()` ; au volant : `seat()`.
 11. **Collisions** : `COLS` (boîtes `userData.cols` des groupes, troncs `userData.tr`, `userData.colr`), remplies par `put()`, résolues par `collide()` à pied seulement.
 12. **Parc à conteneurs** : `depot(z)` (quai, bennes `skip()`, clôture `gFence()`, bulles à verre).
+
+13. **Rejouabilité** : défis du jour + coffre (`dqDay`, `dqAdd`, `dqUI`, bouton 📋), codes cadeaux (`CODES`, `useCode`), tutoriel (`TUTO`, `st.tuto`), neige/orage/sons d'ambiance (`ambient`). Progression de zone sauvegardée : `st.got`, `st.mt`, `SKIP`.
 
 ## Pièges connus
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
