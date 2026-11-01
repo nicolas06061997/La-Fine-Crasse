@@ -291,7 +291,7 @@ const depZ=z=>-100-300*Math.max(0,Math.round((-z-100)/300)),inDepot=z=>Math.abs(
 const GOLD=()=>({v:10,m:(()=>{const o=new THREE.Mesh(new THREE.IcosahedronGeometry(.3,0),MB(0xffd700));o.position.y=.5;return o})()});
 const WM={},winTex=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#ececec';x.fillRect(0,0,256,256);for(let i=0;i<1200;i++){x.fillStyle='rgba('+(Math.random()<.5?'0,0,0':'255,255,255')+',.05)';x.fillRect(Math.random()*256,Math.random()*256,3,3)}for(let i=0;i<2;i++)for(let j=0;j<2;j++){const X=24+i*120,Y=22+j*120;x.fillStyle='#d8d8d8';x.fillRect(X-6,Y-6,92,102);const lit=Math.random()<.3,gr=x.createLinearGradient(0,Y,0,Y+90);gr.addColorStop(0,lit?'#ffe9a8':'#5d7387');gr.addColorStop(1,lit?'#f2c76b':'#1f2d3a');x.fillStyle=gr;x.fillRect(X,Y,80,90);x.fillStyle='#e6e6e6';x.fillRect(X+38,Y,4,90);x.fillRect(X,Y+42,80,4);x.fillStyle='#bdbdbd';x.fillRect(X-8,Y+90,96,6)}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,3);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t})();
 const wm=c=>WM[c]||(WM[c]=new THREE.MeshStandardMaterial({color:ds(c),map:winTex,roughness:.9,metalness:0}));
-function town(z){for(const s of[-1,1]){if(s===1&&inDepot(z))continue;const w=rd(5,9),h=rd(6,18),G=new THREE.Group();const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,5.8),wm(pk([0xffd166,0xef476f,0x06d6a0,0x4cc9f0,0xf4a261,0xb388eb])));m.position.y=h/2;G.add(m,box(w+.4,.4,6.2,0x555555,0,h+.2,0),box(.6,.3,5.2,pk([0xd32f2f,0x1976d2,0x2e7d32]),-s*(w/2+.3),2.6,0));G.userData.cols=[[0,0,w,5.8]];put(G,s*(11.8+w/2),0,z-3,1,0);if(Math.random()<.6)put(lamp(s),s*6.9,0,z-rd(1,5),1,0)}}
+function town(z){for(const s of[-1,1]){if(s===1&&inDepot(z))continue;const w=rd(5,9),h=rd(6,18),G=new THREE.Group();const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,5.8),wm(pk([0xffd166,0xef476f,0x06d6a0,0x4cc9f0,0xf4a261,0xb388eb])));m.position.y=h/2;G.add(m,box(w+.4,.4,6.2,0x555555,0,h+.2,0),box(.6,.3,5.2,pk([0xd32f2f,0x1976d2,0x2e7d32]),-s*(w/2+.3),2.6,0));/* rez-de-chaussée : vitrine sombre, porte, enseigne */const fx0=-s*(w/2+.04);G.add(box(.06,2,3.6,0x1b2a38,fx0,1.25,-.6),box(.08,.12,3.8,0xd9d9d9,fx0,2.3,-.6),box(.07,2.1,1,pk([0x5d4037,0x37474f,0x8d2b2b]),fx0,1.05,2),box(.08,.08,.08,0xffd23f,-s*(w/2+.09),1.1,1.65));G.userData.cols=[[0,0,w,5.8]];put(G,s*(11.8+w/2),0,z-3,1,0);if(Math.random()<.6)put(lamp(s),s*6.9,0,z-rd(1,5),1,0)}}
 function depot0(z){}
 // panneau + circulation
 function signMesh(){const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');x.fillStyle='#ffd600';x.fillRect(0,0,256,128);x.strokeStyle='#d50000';x.lineWidth=8;x.strokeRect(6,6,244,116);x.fillStyle='#111';x.font='bold 34px sans-serif';x.textAlign='center';x.fillText('DÉPASSEZ',128,44);x.fillText('À GAUCHE',128,80);x.beginPath();x.moveTo(36,106);x.lineTo(68,93);x.lineTo(68,119);x.closePath();x.fill();x.fillRect(68,103,150,6);
@@ -383,16 +383,21 @@ rebuildPlayer();
 let HERO=null,HMX=null,HCUR='',HMAT=null,HHD=null,FACECAM=false;const HACT={},HLP0=new THREE.Vector3();
 
 // personnage humain réaliste (modèle 3D) + animations marche/course/repos ; le bonhomme simple reste si le chargement échoue
+// veste de travail : on repeint la texture d'origine (plis et coutures gardés) dans la couleur de la tenue, avec deux bandes réfléchissantes
+let HTOPI=null,HTOPC=-1,HBOTI=null,HBOTC=-1;function paintTop(){if(HBOT&&HBOTI){const pc=FOPT.pants[1][st.face.pants];if(pc!==HBOTC){HBOTC=pc;repaint2(HBOT,HBOTI,new THREE.Color(pc),false)}}if(!HTOP||!HTOPI)return;const col=MC[0xe8dc10].color.getHex();if(col===HTOPC)return;HTOPC=col;repaint2(HTOP,HTOPI,new THREE.Color(col).convertLinearToSRGB(),true)}
+function repaint2(mat,img,cc,stripes){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.drawImage(img,0,0,512,512);
+ const d=x.getImageData(0,0,512,512),a=d.data,R=cc.r*255,G=cc.g*255,B=cc.b*255;for(let i=0;i<a.length;i+=4){const L=(a[i]*.3+a[i+1]*.59+a[i+2]*.11)/255,f=Math.max(.45,Math.min(1.15,.85+(L-.5)*.9));a[i]=R*f;a[i+1]=G*f;a[i+2]=B*f}x.putImageData(d,0,0);
+ if(stripes){x.fillStyle='rgba(215,222,226,.95)';for(const y of[300,350])x.fillRect(190,y,300,14)}const t=new THREE.CanvasTexture(c);t.flipY=false;t.encoding=THREE.sRGBEncoding;if(mat.map&&mat.map.isCanvasTexture)mat.map.dispose();mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true}
 const HB={};let HTOP=null,HBOT=null,HSKIN=[],HEYE=null,HBEARD=null,HHAT=null;
 try{if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader(),ld=u=>new Promise((ok,ko)=>GL.load(u,ok,undefined,ko));
  Promise.all([ld('models/humain.glb'),ld('models/anims.glb')]).then(([g,a])=>{const m=g.scene;
   m.traverse(o=>{if(o.isBone)HB[o.name]=o;if(o.isMesh){o.castShadow=true;o.frustumCulled=false;const n=o.material.name;
-   if(n==='Wolf3D_Outfit_Top'){o.material=new THREE.MeshStandardMaterial({color:MC[0xe8dc10].color.clone(),normalMap:o.material.normalMap,roughness:.6,skinning:true});HTOP=o.material}
-   else if(n==='Wolf3D_Outfit_Bottom'){o.material=new THREE.MeshStandardMaterial({color:ds(0x2b3a55),normalMap:o.material.normalMap,roughness:.8,skinning:true});HBOT=o.material}
+   if(n==='Wolf3D_Outfit_Top'){HTOPI=o.material.map&&o.material.map.image;o.material=new THREE.MeshStandardMaterial({color:0xffffff,normalMap:o.material.normalMap,roughness:.7,skinning:true});HTOP=o.material;paintTop()}
+   else if(n==='Wolf3D_Outfit_Bottom'){HBOT=o.material;HBOTI=o.material.map&&o.material.map.image}
    else if(n==='Wolf3D_Skin'||n==='Wolf3D_Body'){HSKIN.push(o.material)}else if(n==='Wolf3D_Eye')HEYE=o.material;else if(n==='Wolf3D_Beard')HBEARD=o;else if(n==='Wolf3D_Headwear')HHAT=o}});
   HHD=HB.Head;
   // bandes réfléchissantes et sac à dos accrochés au buste (unités : mètres)
-  if(HB.Spine2){const bp=new THREE.Group();bp.add(box(.3,.38,.14,0x2e7d32,0,0,0),box(.26,.1,.04,0x256d2a,0,-.08,-.085),box(.32,.03,.15,0xd9d9d9,0,.06,0));bp.position.set(0,.02,-.2);HB.Spine2.add(bp)}
+  if(HB.Spine2){const bp=new THREE.Group();bp.add(box(.3,.38,.14,0x2e7d32,0,0,0),box(.26,.1,.04,0x256d2a,0,-.08,-.085),box(.32,.03,.15,0xd9d9d9,0,.06,0));bp.position.set(0,-.03,-.12);HB.Spine2.add(bp)}
   // animations du X Bot : mêmes noms d'os ; déplacement des hanches remis à l'échelle (cm → m)
   P.clear();P.add(m);sh(P);HERO=m;P.rotation.y=Math.PI;buildFace();HMX=new THREE.AnimationMixer(m);
   for(const c0 of a.animations)HACT[c0.name]=HMX.clipAction(retarget(a.scene,c0,m));
@@ -415,10 +420,10 @@ function retarget(srcS,clip,tgt){const sN={},tN=[],Q=()=>new THREE.Quaternion(),
  mx.stopAllAction();mx.uncacheRoot(srcS);tN.forEach((b,i)=>b.quaternion.copy(keep[i]));tgt.updateMatrixWorld(true);const tr=tN.map(b=>new THREE.QuaternionKeyframeTrack(b.name+'.quaternion',times,out[b.name]));tr.push(new THREE.VectorKeyframeTrack('Hips.position',times,pos));return new THREE.AnimationClip(clip.name,clip.duration,tr)}
 // personnalisation : peau, barbe, couvre-chef, lunettes, yeux, couleur du pantalon
 const FOPT={skin:['Peau',[0xffffff,0xe8c4a0,0xc89870,0x8d5f3e,0x5a3a26]],beard:['Barbe',['Oui','Non']],hat:['Sur la tête',['Casquette fluo','Chapeau','Rien']],
- gl:['Lunettes',['Aucune','Lunettes','Lunettes de soleil']],eye:['Yeux',[0xffffff,0x9cc3ff,0xa8e0a0,0x8a6a50]],pants:['Pantalon',[0x2b3a55,0x2b2b2e,0x55606b,0x6b4f2a,0x2f5d3a]]};
+ gl:['Lunettes',['Aucune','Lunettes','Lunettes de soleil']],eye:['Yeux',[0xffffff,0x9cc3ff,0xa8e0a0,0x8a6a50]],pants:['Pantalon',[0x2f3e66,0x2b2b2e,0x5d6670,0x7a5a36,0x3d6b45,0xe8dc10]]};
 st.face=Object.assign({skin:0,beard:0,hat:0,gl:0,eye:0,pants:0},st.face||{});for(const k in FOPT)if(!(st.face[k]<FOPT[k][1].length))st.face[k]=0;
 function buildFace(){if(!HHD)return;const old=HHD.getObjectByName('face');if(old)HHD.remove(old);const f=st.face,G=new THREE.Group();G.name='face';
- for(const m of HSKIN)m.color.set(FOPT.skin[1][f.skin]);if(HEYE)HEYE.color.set(FOPT.eye[1][f.eye]);if(HBOT)HBOT.color.copy(ds(FOPT.pants[1][f.pants]));if(HBEARD)HBEARD.visible=f.beard===0;if(HHAT)HHAT.visible=f.hat===1;
+ for(const m of HSKIN)m.color.set(FOPT.skin[1][f.skin]);if(HEYE)HEYE.color.set(FOPT.eye[1][f.eye]);paintTop();if(HBEARD)HBEARD.visible=f.beard===0;if(HHAT)HHAT.visible=f.hat===1;
  if(f.hat===0){const OR=M(0xff6d00),c=new THREE.Mesh(new THREE.SphereGeometry(.112,20,12,0,Math.PI*2,0,Math.PI*.5),OR);c.position.set(0,.115,-.005);c.scale.set(1,.9,1.08);const br=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.012,16,1,false,-Math.PI/2,Math.PI),OR);br.position.set(0,.12,.07);br.scale.z=1.35;G.add(c,br)}
  if(f.gl>0){const c=f.gl===2?0x0b0b0b:0x222222;for(const x of[-.033,.033]){const r=f.gl===2?box(.05,.032,.006,c,x,.075,.098):new THREE.Mesh(new THREE.TorusGeometry(.021,.003,6,16),M(c));r.position.set(x,.075,.098);G.add(r)}G.add(box(.025,.004,.004,c,0,.08,.1))}
  G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});HHD.add(G)}
@@ -435,9 +440,9 @@ function pedal(){PDL+=Math.abs(drv)*.06+.01;const a=PDL,s1=Math.sin(a),c1=Math.c
 // au volant (voiture, camionnette) : assis, jambes vers l'avant, mains sur le volant
 function seat(){const T=st.veh>=3;P.position.set(CAR.position.x+(T?-.45:-.3),T?.3:-.36,CAR.position.z+(T?-2.15:-1.2));bq('Spine',-.05,0,0);bq('LeftUpLeg',1.5,0,0);bq('RightUpLeg',1.5,0,0);bq('LeftLeg',-1.45,0,0);bq('RightLeg',-1.45,0,0);bq('LeftArm',-.3,0,-1.05);bq('RightArm',-.3,0,1.05);bq('LeftForeArm',0,0,-.7);bq('RightForeArm',0,0,.7)}
 var PDY=.05,PDZ=.42,PSP=.4,PUL=1.2,PUA=.35,PLL=-1.3,PLA=.45,PAX=-.2,PAZ=-1.1,PFA=-.6;
-function heroAnim(dt){if(!HERO)return;if(HTOP)HTOP.color.copy(MC[0xe8dc10].color);const v=HLP0.distanceTo(P.position)/Math.max(dt,.001);HLP0.copy(P.position);
+function heroAnim(dt){if(!HERO)return;paintTop();const v=HLP0.distanceTo(P.position)/Math.max(dt,.001);HLP0.copy(P.position);
  const want=driving?'idle':v>5.6?'run':v>.4?'walk':'idle';if(want!==HCUR&&HACT[want]){const a=HACT[want].reset().play(),b=HACT[HCUR];if(b)a.crossFadeFrom(b,.25,false);HCUR=want}
- if(HCUR==='walk')HACT.walk.timeScale=Math.min(1.6,Math.max(.7,v/3.2));if(HCUR==='run')HACT.run.timeScale=Math.min(1.4,Math.max(.8,v/7));if(!driving)P.position.y=0;HMX.update(dt);P.scale.setScalar(driving&&st.veh>=2?.85:1);if(driving&&st.veh<2)pedal();else if(driving)seat()}
+ if(HCUR==='walk')HACT.walk.timeScale=Math.min(1.6,Math.max(.7,v/3.2));if(HCUR==='run')HACT.run.timeScale=Math.min(1.4,Math.max(.8,v/7));if(!driving)P.position.y=0;HMX.update(dt);if(!driving){bq('LeftArm',-.24,0,0);bq('RightArm',-.24,0,0);bq('LeftUpLeg',0,0,.07);bq('RightUpLeg',0,0,-.07)}P.scale.setScalar(driving&&st.veh>=2?.85:1);if(driving&&st.veh<2)pedal();else if(driving)seat()}
 // palmiers réalistes : tronc animé par le vent, palmes avec folioles
 const frondT=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.strokeStyle='#4a5a1c';x.lineWidth=2;x.beginPath();x.moveTo(0,32);x.lineTo(128,32);x.stroke();for(let i=0;i<26;i++){const px=i*4.8;x.strokeStyle=pk(['#2f7a2a','#3f9a32','#4aa83a','#2a6a26']);x.lineWidth=2.4;for(const d of[-1,1]){x.beginPath();x.moveTo(px,32);x.lineTo(px+7,32+d*(26-i*.5));x.stroke()}}const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t})();
 function frondsGeo(){const pos=[],uv=[],nor=[],idx=[];let v=0;for(let f=0;f<10;f++){const a=f/10*6.283+rd(0,.3),L=rd(2.6,3.4),tilt=rd(.15,.5),seg=6;for(let s=0;s<=seg;s++){const t=s/seg,x=t*L,y=t*L*.3*Math.sin(tilt*3)-1.6*t*t*(.4+tilt),w=.55*(1-.45*t)+.05;for(const sd of[-1,1]){pos.push(Math.cos(a)*x-Math.sin(a)*sd*w,y,Math.sin(a)*x+Math.cos(a)*sd*w);uv.push(t,sd<0?0:1);nor.push(0,1,0)}if(s<seg)idx.push(v,v+1,v+2,v+1,v+3,v+2);v+=2}}const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));G.setIndex(idx);return G}
@@ -668,7 +673,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-01.7";
+var APPV="2026-11-01.8";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
