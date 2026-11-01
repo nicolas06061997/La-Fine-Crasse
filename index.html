@@ -46,6 +46,7 @@ button:disabled{filter:grayscale(.8);opacity:.6}
 #cb{bottom:calc(env(safe-area-inset-bottom,0px) + 84px)!important}
 #shop{position:fixed;inset:0;background:rgba(5,10,18,.7);display:none;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;z-index:20}
 #shop .box{background:linear-gradient(#22344a,#131d2b);color:#fff;border:3px solid rgba(255,255,255,.18);border-radius:22px;padding:14px;width:100%;max-width:440px;max-height:88%;overflow:auto;touch-action:pan-y;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.xb{position:sticky;top:0;float:right;width:42px;height:42px;padding:0;border-radius:50%;border:2px solid #fff;background:linear-gradient(#ff6b6b,#d32f2f);box-shadow:0 3px 0 #8e1b1b,0 4px 10px rgba(0,0,0,.4);font-size:20px;line-height:1;z-index:3;margin:-4px -4px 0 6px}.xb:active{box-shadow:0 1px 0 #8e1b1b}
 #shop h3{font-family:var(--gf);font-weight:400;font-size:20px;text-align:center;letter-spacing:.5px}#shop h4{font-family:var(--gf);font-weight:400;font-size:18px;color:#ffe066;letter-spacing:.5px}
 .it{display:flex;align-items:center;gap:10px;padding:9px 10px;margin:7px 0;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08)}
 .it .ic{font-size:30px;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.1);flex:none}
@@ -60,7 +61,7 @@ button:disabled{filter:grayscale(.8);opacity:.6}
 <div class="mini"><button id="vw" class="rb s" title="Vue">👁️</button><button id="qb" class="rb s" title="Qualité">✨</button><button id="mu" class="rb s" title="Musique">🎵</button><button id="dq" class="rb s" title="Défis du jour">📋</button><button id="pf" class="rb s" title="Mon personnage">🧑</button></div>
 <div class="btns"><button id="tp" class="rb blue"><i>📞</i><span>Appeler</span></button><button id="dr" class="rb"><i>🚲</i><span>Conduire</span></button><button id="sb" class="rb gold"><i>🛒</i><span>Boutique</span></button></div>
 <div class="pill" id="nx"></div>
-<div id="shop"><div class="box"><h3 id="shT" style="margin:0 0 6px">🛒 Boutique</h3><div id="list"></div><button id="close" style="width:100%;margin-top:12px">Fermer</button></div></div>
+<div id="shop"><div class="box"><button id="shx" class="xb" aria-label="Fermer">✕</button><h3 id="shT" style="margin:0 0 6px">🛒 Boutique</h3><div id="list"></div><button id="close" style="width:100%;margin-top:12px">Fermer</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
@@ -590,7 +591,7 @@ function render(){const L=$("list");L.innerHTML="";$('shT').innerHTML='🏢 Mon 
  SHOP.forEach(s=>{const own=st.owned.includes(s.id),lock=s.req&&!st.owned.includes(s.req);const d=document.createElement("div");d.className="it";
  const k=s.n.indexOf(" ");d.innerHTML="<span class='ic'>"+s.n.slice(0,k)+"</span><div class='tx'>"+s.n.slice(k+1)+"<small>"+s.d+(lock?" · 🔒 il faut d’abord : "+((SHOP.find(x=>x.id===s.req)||{}).n||""):"")+"</small></div>";const b=document.createElement("button");b.textContent=own?"✔":lock?"🔒":fmt(s.p)+" €";if(own)b.className="own";b.disabled=own||lock||st.money<s.p;
  b.onclick=()=>{st.money-=s.p;st.owned.push(s.id);s.f();save();buildCar();repaint();hud();render();toast("Acheté : "+s.n);snd(660,.1);snd(990,.15,'triangle',.07,.1)};d.appendChild(b);L.appendChild(d)});const h=document.createElement('div');h.innerHTML='<button id="facb" style="width:100%;margin:12px 0 4px;background:#ff8f00">🧑 Choisir mon personnage</button><h4 style="margin:14px 0 6px">🏆 Succès</h4>'+ACH.map(a=>'<div style="opacity:'+(st.ach.includes(a[0])?1:.45)+'">'+(st.ach.includes(a[0])?'✅ ':'🔒 ')+a[1]+'</div>').join('')+'<button id="share" style="width:100%;margin-top:10px">📤 Défier un pote</button><button id="updb" style="width:100%;margin-top:8px;background:#455a64">🔄 Vérifier les mises à jour</button><div style="text-align:center;font-size:12px;opacity:.7;margin-top:4px">Version '+(window.APPV||'')+'</div>';L.appendChild(h);h.querySelector('#facb').onclick=faceUI;h.querySelector('#updb').onclick=()=>{try{chkV(1)}catch(e){}};shopExtra(h);h.querySelector('#share').onclick=()=>{const tx='J’ai ramassé '+st.total+' objets dans La Fine Crasse (niveau '+st.lvl+'). Essaie de me battre : '+SHARE_URL;try{if(navigator.share)navigator.share({text:tx});else navigator.clipboard.writeText(tx);toast('Message prêt à envoyer !')}catch(e){}}}
-$("pf").onclick=()=>faceUI();$("dq").onclick=()=>dqUI();setTimeout(dqDot,500);$("sb").onclick=()=>{$('shT').textContent='🏢 Mon entreprise · niv. '+st.lvl+' · '+st.total+' objets ramassés';render();$("shop").style.display="flex"};$("close").onclick=()=>$("shop").style.display="none";
+$("pf").onclick=()=>faceUI();$("dq").onclick=()=>dqUI();setTimeout(dqDot,500);$("sb").onclick=()=>{$('shT').textContent='🏢 Mon entreprise · niv. '+st.lvl+' · '+st.total+' objets ramassés';render();$("shop").style.display="flex"};$("shx").onclick=()=>$("close").click();$("close").onclick=()=>$("shop").style.display="none";
 // économie : prix revus pour une progression longue + améliorations sans fin (le prix monte à chaque niveau)
 {const NP={pince:30,sac1:80,chaus:150,bike2:220,w1:450,sac2:400,car:1100,mairie:1800,w2:2200,truck:4500,w3:7000,region:10000,w4:22000,wh1:2800,wh2:9500,wh3:32000,tor:200,tve:200,tbl:250,tro:400,vc1:300,vc2:300,vc3:450,vc4:450,logo:600};SHOP.forEach(s=>{if(NP[s.id])s.p=NP[s.id]})}
 const UPG=[{k:'cap',i:'🎒',n:'Sac plus grand',d:'+4 places dans le sac',b:40,g:1.5,max:15},{k:'spd',i:'👟',n:'Pas rapide',d:'+6 % de vitesse',b:70,g:1.6,max:10},{k:'mag',i:'🦾',n:'Pince longue',d:'+0,3 m de portée',b:90,g:1.6,max:8},
@@ -726,7 +727,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.2";
+var APPV="2026-11-02.3";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
