@@ -31,6 +31,7 @@ Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mis
 12. **Parc à conteneurs** : `depot(z)` (quai, bennes `skip()`, clôture `gFence()`, bulles à verre).
 
 13. **Rejouabilité** : défis du jour + coffre (`dqDay`, `dqAdd`, `dqUI`, bouton 📋), codes cadeaux (`CODES`, `useCode`), tutoriel (`TUTO`, `st.tuto`), neige/orage/sons d'ambiance (`ambient`). Progression de zone sauvegardée : `st.got`, `st.mt`, `SKIP`.
+14. **Carte des zones** : `mapUI()` (bouton 🗺️), `travelTo(k)` (vide et reconstruit le monde), `st.maxMap`, `st.stars`, `st.gotz`. **Plage** : mer `SEAM`, sable mouillé, vagues `WAVES`, aileron `FIN` (`beachTick`). **Piétons** : clones SkeletonUtils du personnage (`pedTick`, 2 en qualité normale, 4 en max). Mémoire : `freeObj()` à chaque suppression de décor.
 
 ## Pièges connus
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
