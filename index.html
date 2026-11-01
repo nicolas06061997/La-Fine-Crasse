@@ -384,24 +384,26 @@ let HERO=null,HMX=null,HCUR='',HMAT=null,HHD=null,FACECAM=false;const HACT={},HL
 
 // personnage humain réaliste (modèle 3D) + animations marche/course/repos ; le bonhomme simple reste si le chargement échoue
 // veste de travail : on repeint la texture d'origine (plis et coutures gardés) dans la couleur de la tenue, avec deux bandes réfléchissantes
-let HTOPI=null,HTOPC=-1,HBOTI=null,HBOTC=-1;function paintTop(){if(HBOT&&HBOTI){const pc=FOPT.pants[1][st.face.pants];if(pc!==HBOTC){HBOTC=pc;repaint2(HBOT,HBOTI,new THREE.Color(pc),false)}}if(!HTOP||!HTOPI)return;const col=MC[0xe8dc10].color.getHex();if(col===HTOPC)return;HTOPC=col;repaint2(HTOP,HTOPI,new THREE.Color(col).convertLinearToSRGB(),true)}
+let HTOPI=null,HTOPC=-1,HBOTI=null,HBOTC=-1;function paintTop(){if(HBOT&&HBOTI){const pc=FOPT.pants[1][st.face.pants];if(pc!==HBOTC){HBOTC=pc;repaint2(HBOT,HBOTI,new THREE.Color(pc),false)}}if(!HTOP||!HTOPI)return;const col=MC[0xe8dc10].color.getHex();if(col===HTOPC)return;HTOPC=col;repaint2(HTOP,HTOPI,new THREE.Color(col).convertLinearToSRGB(),!!(CHARS[st.face.char]||{}).str)}
 function repaint2(mat,img,cc,stripes){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.drawImage(img,0,0,512,512);
- const d=x.getImageData(0,0,512,512),a=d.data,R=cc.r*255,G=cc.g*255,B=cc.b*255;for(let i=0;i<a.length;i+=4){const L=(a[i]*.3+a[i+1]*.59+a[i+2]*.11)/255,f=Math.max(.45,Math.min(1.15,.85+(L-.5)*.9));a[i]=R*f;a[i+1]=G*f;a[i+2]=B*f}x.putImageData(d,0,0);
+ const d=x.getImageData(0,0,512,512),a=d.data,R=cc.r*255,G=cc.g*255,B=cc.b*255;let mL=0;for(let i=0;i<a.length;i+=16)mL+=a[i]*.3+a[i+1]*.59+a[i+2]*.11;mL/=a.length/16*255;/* relief du tissu gardé autour de la luminosité moyenne : couleur vive même sur un tissu sombre */for(let i=0;i<a.length;i+=4){const L=(a[i]*.3+a[i+1]*.59+a[i+2]*.11)/255,f=Math.max(.55,Math.min(1.12,.95+(L-mL)*1.6));a[i]=R*f;a[i+1]=G*f;a[i+2]=B*f}x.putImageData(d,0,0);
  if(stripes){x.fillStyle='rgba(215,222,226,.95)';for(const y of[300,350])x.fillRect(190,y,300,14)}const t=new THREE.CanvasTexture(c);t.flipY=false;t.encoding=THREE.sRGBEncoding;if(mat.map&&mat.map.isCanvasTexture)mat.map.dispose();mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true}
-const HB={};let HTOP=null,HBOT=null,HSKIN=[],HEYE=null,HBEARD=null,HHAT=null;
-try{if(THREE.GLTFLoader){const GL=new THREE.GLTFLoader(),ld=u=>new Promise((ok,ko)=>GL.load(u,ok,undefined,ko));
- Promise.all([ld('models/humain.glb'),ld('models/anims.glb')]).then(([g,a])=>{const m=g.scene;
-  m.traverse(o=>{if(o.isBone)HB[o.name]=o;if(o.isMesh){o.castShadow=true;o.frustumCulled=false;const n=o.material.name;
-   if(n==='Wolf3D_Outfit_Top'){HTOPI=o.material.map&&o.material.map.image;o.material=new THREE.MeshStandardMaterial({color:0xffffff,normalMap:o.material.normalMap,roughness:.7,skinning:true});HTOP=o.material;paintTop()}
-   else if(n==='Wolf3D_Outfit_Bottom'){HBOT=o.material;HBOTI=o.material.map&&o.material.map.image}
-   else if(n==='Wolf3D_Skin'||n==='Wolf3D_Body'){HSKIN.push(o.material)}else if(n==='Wolf3D_Eye')HEYE=o.material;else if(n==='Wolf3D_Beard')HBEARD=o;else if(n==='Wolf3D_Headwear')HHAT=o}});
-  HHD=HB.Head;
-  // bandes réfléchissantes et sac à dos accrochés au buste (unités : mètres)
-  if(HB.Spine2){const bp=new THREE.Group();bp.add(box(.3,.38,.14,0x2e7d32,0,0,0),box(.26,.1,.04,0x256d2a,0,-.08,-.085),box(.32,.03,.15,0xd9d9d9,0,.06,0));bp.position.set(0,-.03,-.12);HB.Spine2.add(bp)}
-  // animations du X Bot : mêmes noms d'os ; déplacement des hanches remis à l'échelle (cm → m)
-  P.clear();P.add(m);sh(P);HERO=m;P.rotation.y=Math.PI;buildFace();HMX=new THREE.AnimationMixer(m);
-  for(const c0 of a.animations)HACT[c0.name]=HMX.clipAction(retarget(a.scene,c0,m));
-  if(HACT.idle){HACT.idle.play();HCUR='idle'}}).catch(()=>{})}}catch(e){}
+// personnages au choix (modèles Mixamo convertis en GLB) + animations marche/course/repos ; le bonhomme simple reste si le chargement échoue
+const CHARS=[{n:'Remy',f:'models/remy.glb'}];
+const HB={};let HTOP=null,HBOT=null,HSKIN=[],HHAIR=null,ANIMS=null,HLOAD=-1,HWS=1;
+const HGL=THREE.GLTFLoader?new THREE.GLTFLoader():null,hld=u=>new Promise((ok,ko)=>HGL.load(u,ok,undefined,ko));
+function loadHero(i){if(!HGL)return;i=Math.max(0,Math.min(CHARS.length-1,i|0));HLOAD=i;
+ Promise.all([hld(CHARS[i].f),ANIMS?Promise.resolve(ANIMS):hld('models/anims.glb')]).then(([g,a])=>{if(HLOAD!==i)return;ANIMS=a;const m=g.scene;
+  for(const k in HB)delete HB[k];HTOP=HBOT=HHAIR=null;HSKIN=[];HTOPI=HBOTI=null;HTOPC=HBOTC=-1;
+  m.traverse(o=>{o.name=o.name.replace(/^mixamorig:?/,'');if(o.isBone)HB[o.name]=o;if(o.isMesh&&!o.isSkinnedMesh)o.visible=false;/* restes de la conversion */if(o.isSkinnedMesh){o.castShadow=true;o.frustumCulled=false;const mt=o.material,n=(mt.name||'')+' '+o.name;
+   if(/Top/i.test(n)){HTOPI=mt.map&&mt.map.image;HTOP=mt}else if(/Bottom|Pant/i.test(n)){HBOTI=mt.map&&mt.map.image;HBOT=mt}else if(/Hair/i.test(n))HHAIR=mt;else if(/Skin|Body/i.test(n))HSKIN.push(mt)}});
+  // taille ramenée à 1,8 m ; animations adaptées avant de placer le modèle (repère neutre)
+  m.updateMatrixWorld(true);/* la taille réelle se lit sur le squelette (la tête vers 1,62 m), pas sur la géométrie */const hy=HB.Head?HB.Head.getWorldPosition(new THREE.Vector3()).y:0;if(hy>.1)m.scale.multiplyScalar(1.62/hy);m.updateMatrixWorld(true);
+  const mx=new THREE.AnimationMixer(m),acts={};for(const c0 of a.animations)acts[c0.name]=mx.clipAction(retarget(a.scene,c0,m));
+  HHD=HB.Head;const wv=new THREE.Vector3();HWS=HHD?HHD.getWorldScale(wv).x:1;
+  if(HB.Spine2){const bp=new THREE.Group();bp.add(box(.3,.38,.14,0x2e7d32,0,0,0),box(.26,.1,.04,0x256d2a,0,-.08,-.085),box(.32,.03,.15,0xd9d9d9,0,.06,0));bp.position.set(0,-.03,-.13);const k=1/HB.Spine2.getWorldScale(wv).x;bp.scale.setScalar(k);bp.position.multiplyScalar(k);HB.Spine2.add(bp)}
+  if(HMX)HMX.stopAllAction();P.clear();P.add(m);sh(P);HERO=m;P.rotation.y=Math.PI;HMX=mx;for(const k in HACT)delete HACT[k];Object.assign(HACT,acts);HCUR='';if(HACT.idle){HACT.idle.play();HCUR='idle'}buildFace()}).catch(()=>{})}
+
 // adapte une animation du X Bot au squelette humain : les os n'ont pas la même orientation au repos,
 // on transfère donc la rotation « monde » de chaque os image par image (même nom d'os des deux côtés)
 function retarget(srcS,clip,tgt){const sN={},tN=[],Q=()=>new THREE.Quaternion(),V=()=>new THREE.Vector3();srcS.traverse(o=>{sN[o.name]=o});tgt.traverse(o=>{if(o.isBone&&sN[o.name])tN.push(o)});
@@ -419,18 +421,19 @@ function retarget(srcS,clip,tgt){const sN={},tN=[],Q=()=>new THREE.Quaternion(),
   const d=sN.Hips.getWorldPosition(V()).sub(sh0).multiplyScalar(k).applyQuaternion(hipPI);pos.push(th0.x+d.x,th0.y+d.y,th0.z+d.z)}
  mx.stopAllAction();mx.uncacheRoot(srcS);tN.forEach((b,i)=>b.quaternion.copy(keep[i]));tgt.updateMatrixWorld(true);const tr=tN.map(b=>new THREE.QuaternionKeyframeTrack(b.name+'.quaternion',times,out[b.name]));tr.push(new THREE.VectorKeyframeTrack('Hips.position',times,pos));return new THREE.AnimationClip(clip.name,clip.duration,tr)}
 // personnalisation : peau, barbe, couvre-chef, lunettes, yeux, couleur du pantalon
-const FOPT={skin:['Peau',[0xffffff,0xe8c4a0,0xc89870,0x8d5f3e,0x5a3a26]],beard:['Barbe',['Oui','Non']],hat:['Sur la tête',['Casquette fluo','Chapeau','Rien']],
- gl:['Lunettes',['Aucune','Lunettes','Lunettes de soleil']],eye:['Yeux',[0xffffff,0x9cc3ff,0xa8e0a0,0x8a6a50]],pants:['Pantalon',[0x2f3e66,0x2b2b2e,0x5d6670,0x7a5a36,0x3d6b45,0xe8dc10]]};
-st.face=Object.assign({skin:0,beard:0,hat:0,gl:0,eye:0,pants:0},st.face||{});for(const k in FOPT)if(!(st.face[k]<FOPT[k][1].length))st.face[k]=0;
+const FOPT={char:['Personnage',CHARS.map(c=>c.n)],pants:['Pantalon',[0x2f3e66,0x2b2b2e,0x5d6670,0x7a5a36,0x3d6b45,0xe8dc10]],hat:['Casquette',['Oui','Non']],gl:['Lunettes',['Aucune','Lunettes','Lunettes de soleil']],
+ hair:['Cheveux',[0xffffff,0x6b4a2e,0x2a2420,0xe8c878,0xc0603a]],skin:['Peau',[0xffffff,0xf0d0b8,0xc8987a,0x9a6a50,0x6a4a38]]};
+st.face=Object.assign({char:0,pants:0,hat:0,gl:0,hair:0,skin:0},st.face||{});for(const k in FOPT)if(!(st.face[k]<FOPT[k][1].length))st.face[k]=0;
 function buildFace(){if(!HHD)return;const old=HHD.getObjectByName('face');if(old)HHD.remove(old);const f=st.face,G=new THREE.Group();G.name='face';
- for(const m of HSKIN)m.color.set(FOPT.skin[1][f.skin]);if(HEYE)HEYE.color.set(FOPT.eye[1][f.eye]);paintTop();if(HBEARD)HBEARD.visible=f.beard===0;if(HHAT)HHAT.visible=f.hat===1;
- if(f.hat===0){const OR=M(0xff6d00),c=new THREE.Mesh(new THREE.SphereGeometry(.112,20,12,0,Math.PI*2,0,Math.PI*.5),OR);c.position.set(0,.115,-.005);c.scale.set(1,.9,1.08);const br=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.012,16,1,false,-Math.PI/2,Math.PI),OR);br.position.set(0,.12,.07);br.scale.z=1.35;G.add(c,br)}
- if(f.gl>0){const c=f.gl===2?0x0b0b0b:0x222222;for(const x of[-.033,.033]){const r=f.gl===2?box(.05,.032,.006,c,x,.075,.098):new THREE.Mesh(new THREE.TorusGeometry(.021,.003,6,16),M(c));r.position.set(x,.075,.098);G.add(r)}G.add(box(.025,.004,.004,c,0,.08,.1))}
- G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});HHD.add(G)}
+ for(const m of HSKIN)m.color.set(FOPT.skin[1][f.skin]);if(HHAIR)HHAIR.color.set(FOPT.hair[1][f.hair]);paintTop();
+ if(f.hat===0){const OR=M(0xff6d00),c=new THREE.Mesh(new THREE.SphereGeometry(.112,20,12,0,Math.PI*2,0,Math.PI*.5),OR);c.position.set(0,CAPY,-.01);c.scale.set(1,.85,1.1);const br=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.012,16,1,false,-Math.PI/2,Math.PI),OR);br.position.set(0,CAPY+.005,.075);br.scale.z=1.35;G.add(c,br)}
+ if(f.gl>0){const c=f.gl===2?0x0b0b0b:0x222222;for(const x of[-.033,.033]){const r=f.gl===2?box(.05,.032,.006,c,x,GLY,GLZ):new THREE.Mesh(new THREE.TorusGeometry(.021,.003,6,16),M(c));r.position.set(x,GLY,GLZ);G.add(r)}G.add(box(.025,.004,.004,c,0,GLY+.005,GLZ+.002))}
+ G.scale.setScalar(1/HWS);G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false}});HHD.add(G)}
+var CAPY=.2,GLY=.108,GLZ=.105;try{loadHero(st.face.char)}catch(e){}
 // panneau de personnalisation : la caméra se place face au personnage
-function faceUI(){if(!HHD)return toast('Le personnage charge encore, réessaie dans un instant');const b=document.createElement('div');b.id='facep';b.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:45;background:var(--card);color:var(--fg);border-radius:18px;padding:10px 12px;max-height:46%;overflow:auto;touch-action:pan-y;box-shadow:0 6px 20px rgba(0,0,0,.35)';
- const draw=()=>{b.innerHTML='<b style="display:block;text-align:center;margin-bottom:6px">😀 Mon personnage</b>'+Object.keys(FOPT).map(k=>{const o=FOPT[k],v=st.face[k],lab=typeof o[1][0]==='string'?o[1][v]:'<span style="display:inline-block;width:22px;height:22px;border-radius:50%;vertical-align:middle;border:2px solid #fff;background:#'+o[1][v].toString(16).padStart(6,'0')+'"></span>';return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0"><span style="flex:1">'+o[0]+'</span><button data-k="'+k+'" data-d="-1" style="padding:6px 12px">◀</button><span style="min-width:110px;text-align:center;font-weight:700">'+lab+'</span><button data-k="'+k+'" data-d="1" style="padding:6px 12px">▶</button></div>'}).join('')+'<button id="facok" style="width:100%;margin-top:8px">✔ Terminé</button>';
-  b.querySelectorAll('button[data-k]').forEach(x=>x.onclick=()=>{const k=x.dataset.k,n=FOPT[k][1].length;st.face[k]=(st.face[k]+ +x.dataset.d+n)%n;buildFace();save();draw();snd(620,.05,'triangle')});b.querySelector('#facok').onclick=()=>{b.remove();FACECAM=false;save()}};
+function faceUI(){if(document.getElementById('facep'))return;if(!HHD)return toast('Le personnage charge encore, réessaie dans un instant');const b=document.createElement('div');b.id='facep';b.style.cssText='position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:45;background:var(--card);color:var(--fg);border-radius:18px;padding:10px 12px;max-height:46%;overflow:auto;touch-action:pan-y;box-shadow:0 6px 20px rgba(0,0,0,.35)';
+ const draw=()=>{b.innerHTML='<b style="display:block;text-align:center;margin-bottom:6px;font-family:var(--gf);font-size:19px">🧑 Choisis ton personnage</b>'+Object.keys(FOPT).map(k=>{const o=FOPT[k],v=st.face[k],lab=typeof o[1][0]==='string'?o[1][v]:'<span style="display:inline-block;width:22px;height:22px;border-radius:50%;vertical-align:middle;border:2px solid #fff;background:#'+o[1][v].toString(16).padStart(6,'0')+'"></span>';return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0"><span style="flex:1">'+o[0]+'</span><button data-k="'+k+'" data-d="-1" style="padding:6px 12px">◀</button><span style="min-width:110px;text-align:center;font-weight:700">'+lab+'</span><button data-k="'+k+'" data-d="1" style="padding:6px 12px">▶</button></div>'}).join('')+'<button id="facok" style="width:100%;margin-top:8px">✔ Terminé</button>';
+  b.querySelectorAll('button[data-k]').forEach(x=>x.onclick=()=>{const k=x.dataset.k,n=FOPT[k][1].length;st.face[k]=(st.face[k]+ +x.dataset.d+n)%n;if(k==='char')loadHero(st.face.char);else buildFace();save();draw();snd(620,.05,'triangle')});b.querySelector('#facok').onclick=()=>{b.remove();FACECAM=false;save()}};
  draw();document.body.appendChild(b);FACECAM=true;$('shop').style.display='none'}
 // à vélo : assis, mains au guidon, jambes qui pédalent (vitesse liée à celle du vélo)
 let PDL=0;const QE=new THREE.Euler(),QQ=new THREE.Quaternion();function bq(n,x,y,z){const b=HB[n];if(!b)return;b.quaternion.multiply(QQ.setFromEuler(QE.set(x,y,z)))}
@@ -438,11 +441,11 @@ function pedal(){PDL+=Math.abs(drv)*.06+.01;const a=PDL,s1=Math.sin(a),c1=Math.c
  bq('Spine',PSP,0,0);bq('LeftUpLeg',PUL+PUA*s1,0,0);bq('RightUpLeg',PUL-PUA*s1,0,0);bq('LeftLeg',PLL+PLA*c1,0,0);bq('RightLeg',PLL-PLA*c1,0,0);
  bq('LeftArm',PAX,0,PAZ);bq('RightArm',PAX,0,-PAZ);bq('LeftForeArm',0,0,PFA);bq('RightForeArm',0,0,-PFA)}
 // au volant (voiture, camionnette) : assis, jambes vers l'avant, mains sur le volant
-function seat(){const T=st.veh>=3;P.position.set(CAR.position.x+(T?-.45:-.3),T?.3:-.36,CAR.position.z+(T?-2.15:-1.2));bq('Spine',-.05,0,0);bq('LeftUpLeg',1.5,0,0);bq('RightUpLeg',1.5,0,0);bq('LeftLeg',-1.45,0,0);bq('RightLeg',-1.45,0,0);bq('LeftArm',-.3,0,-1.05);bq('RightArm',-.3,0,1.05);bq('LeftForeArm',0,0,-.7);bq('RightForeArm',0,0,.7)}
-var PDY=.05,PDZ=.42,PSP=.4,PUL=1.2,PUA=.35,PLL=-1.3,PLA=.45,PAX=-.2,PAZ=-1.1,PFA=-.6;
+function seat(){const T=st.veh>=3;P.position.set(CAR.position.x+(T?-.45:-.3),T?.3:-.36,CAR.position.z+(T?-2.15:-1.2));bq('Spine',-.05,0,0);bq('LeftUpLeg',1.5,0,0);bq('RightUpLeg',1.5,0,0);bq('LeftLeg',-1.45,0,0);bq('RightLeg',-1.45,0,0);bq('LeftArm',0,0,1.2);bq('RightArm',0,0,-1.2);bq('LeftForeArm',0,0,.6);bq('RightForeArm',0,0,-.6)}
+var PDY=.05,PDZ=.42,PSP=.4,PUL=1.2,PUA=.35,PLL=-1.3,PLA=.45,PAX=0,PAZ=1.3,PFA=.5;
 function heroAnim(dt){if(!HERO)return;paintTop();const v=HLP0.distanceTo(P.position)/Math.max(dt,.001);HLP0.copy(P.position);
  const want=driving?'idle':v>5.6?'run':v>.4?'walk':'idle';if(want!==HCUR&&HACT[want]){const a=HACT[want].reset().play(),b=HACT[HCUR];if(b)a.crossFadeFrom(b,.25,false);HCUR=want}
- if(HCUR==='walk')HACT.walk.timeScale=Math.min(1.6,Math.max(.7,v/3.2));if(HCUR==='run')HACT.run.timeScale=Math.min(1.4,Math.max(.8,v/7));if(!driving)P.position.y=0;HMX.update(dt);if(!driving){bq('LeftArm',-.24,0,0);bq('RightArm',-.24,0,0);bq('LeftUpLeg',0,0,.07);bq('RightUpLeg',0,0,-.07)}P.scale.setScalar(driving&&st.veh>=2?.85:1);if(driving&&st.veh<2)pedal();else if(driving)seat()}
+ if(HCUR==='walk')HACT.walk.timeScale=Math.min(1.6,Math.max(.7,v/3.2));if(HCUR==='run')HACT.run.timeScale=Math.min(1.4,Math.max(.8,v/7));if(!driving)P.position.y=0;HMX.update(dt);P.scale.setScalar(driving&&st.veh>=2?.85:1);if(driving&&st.veh<2)pedal();else if(driving)seat()}
 // palmiers réalistes : tronc animé par le vent, palmes avec folioles
 const frondT=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.strokeStyle='#4a5a1c';x.lineWidth=2;x.beginPath();x.moveTo(0,32);x.lineTo(128,32);x.stroke();for(let i=0;i<26;i++){const px=i*4.8;x.strokeStyle=pk(['#2f7a2a','#3f9a32','#4aa83a','#2a6a26']);x.lineWidth=2.4;for(const d of[-1,1]){x.beginPath();x.moveTo(px,32);x.lineTo(px+7,32+d*(26-i*.5));x.stroke()}}const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t})();
 function frondsGeo(){const pos=[],uv=[],nor=[],idx=[];let v=0;for(let f=0;f<10;f++){const a=f/10*6.283+rd(0,.3),L=rd(2.6,3.4),tilt=rd(.15,.5),seg=6;for(let s=0;s<=seg;s++){const t=s/seg,x=t*L,y=t*L*.3*Math.sin(tilt*3)-1.6*t*t*(.4+tilt),w=.55*(1-.45*t)+.05;for(const sd of[-1,1]){pos.push(Math.cos(a)*x-Math.sin(a)*sd*w,y,Math.sin(a)*x+Math.cos(a)*sd*w);uv.push(t,sd<0?0:1);nor.push(0,1,0)}if(s<seg)idx.push(v,v+1,v+2,v+1,v+3,v+2);v+=2}}const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));G.setIndex(idx);return G}
@@ -673,7 +676,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-01.8";
+var APPV="2026-11-01.9";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
