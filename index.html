@@ -393,16 +393,16 @@ function repaint2(mat,img,cc,stripes){const c=document.createElement('canvas');c
  if(stripes){x.fillStyle='rgba(215,222,226,.95)';for(const y of[300,350])x.fillRect(190,y,300,14)}const t=new THREE.CanvasTexture(c);t.flipY=false;t.encoding=THREE.sRGBEncoding;if(mat.map&&mat.map.isCanvasTexture)mat.map.dispose();mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true}
 // personnages au choix (modèles Mixamo convertis en GLB) + animations marche/course/repos ; le bonhomme simple reste si le chargement échoue
 const CHARS=[{n:'Remy',f:'models/remy.glb'}];
-const HB={};let HTOP=null,HBOT=null,HSKIN=[],HHAIR=null,ANIMS=null,HLOAD=-1,HWS=1;
+const HB={};let HTOP=null,HBOT=null,HSKIN=[],HHAIR=null,ANIMS=null,WALK=null,HLOAD=-1,HWS=1;
 const HGL=THREE.GLTFLoader?new THREE.GLTFLoader():null,hld=u=>new Promise((ok,ko)=>HGL.load(u,ok,undefined,ko));
 function loadHero(i){if(!HGL)return;i=Math.max(0,Math.min(CHARS.length-1,i|0));HLOAD=i;
- Promise.all([hld(CHARS[i].f),ANIMS?Promise.resolve(ANIMS):hld('models/anims.glb')]).then(([g,a])=>{if(HLOAD!==i)return;ANIMS=a;const m=g.scene;
+ Promise.all([hld(CHARS[i].f),ANIMS?Promise.resolve(ANIMS):hld('models/anims.glb'),WALK?Promise.resolve(WALK):hld('models/marche.glb').then(w=>{/* noms d'os sans « mixamorig » */w.scene.traverse(o=>{o.name=o.name.replace(/^mixamorig:?/,'')});for(const c of w.animations)for(const t of c.tracks)t.name=t.name.replace(/^mixamorig:?/,'');return w}).catch(()=>null)]).then(([g,a,wk])=>{if(HLOAD!==i)return;ANIMS=a;WALK=wk;const m=g.scene;
   for(const k in HB)delete HB[k];HTOP=HBOT=HHAIR=null;HSKIN=[];HTOPI=HBOTI=null;HTOPC=HBOTC=-1;
   m.traverse(o=>{o.name=o.name.replace(/^mixamorig:?/,'');if(o.isBone)HB[o.name]=o;if(o.isMesh&&!o.isSkinnedMesh)o.visible=false;/* restes de la conversion */if(o.isSkinnedMesh){o.castShadow=true;o.frustumCulled=false;const mt=o.material,n=(mt.name||'')+' '+o.name;
    if(/Top/i.test(n)){HTOPI=mt.map&&mt.map.image;HTOP=mt}else if(/Bottom|Pant/i.test(n)){HBOTI=mt.map&&mt.map.image;HBOT=mt}else if(/Hair/i.test(n))HHAIR=mt;else if(/Skin|Body/i.test(n))HSKIN.push(mt)}});
   // taille ramenée à 1,8 m ; animations adaptées avant de placer le modèle (repère neutre)
   m.updateMatrixWorld(true);/* la taille réelle se lit sur le squelette (la tête vers 1,62 m), pas sur la géométrie */const hy=HB.Head?HB.Head.getWorldPosition(new THREE.Vector3()).y:0;if(hy>.1)m.scale.multiplyScalar(1.62/hy);m.updateMatrixWorld(true);
-  const mx=new THREE.AnimationMixer(m),acts={};for(const c0 of a.animations)acts[c0.name]=mx.clipAction(retarget(a.scene,c0,m));
+  const mx=new THREE.AnimationMixer(m),acts={};for(const c0 of a.animations)acts[c0.name]=mx.clipAction(retarget(a.scene,c0,m));if(wk&&wk.animations[0])acts.walk=mx.clipAction(retarget(wk.scene,wk.animations[0],m));/* démarche « Strut Walking » choisie */
   HHD=HB.Head;const wv=new THREE.Vector3();HWS=HHD?HHD.getWorldScale(wv).x:1;
   if(HB.Spine2){const bp=new THREE.Group();bp.add(box(.3,.38,.14,0x2e7d32,0,0,0),box(.26,.1,.04,0x256d2a,0,-.08,-.085),box(.32,.03,.15,0xd9d9d9,0,.06,0));bp.position.set(0,-.03,-.13);const k=1/HB.Spine2.getWorldScale(wv).x;bp.scale.setScalar(k);bp.position.multiplyScalar(k);HB.Spine2.add(bp)}
   if(HMX)HMX.stopAllAction();P.clear();P.add(m);sh(P);HERO=m;P.rotation.y=Math.PI;HMX=mx;for(const k in HACT)delete HACT[k];Object.assign(HACT,acts);HCUR='';if(HACT.idle){HACT.idle.play();HCUR='idle'}buildFace()}).catch(()=>{})}
@@ -679,7 +679,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-01.13";
+var APPV="2026-11-01.14";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
