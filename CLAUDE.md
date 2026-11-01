@@ -25,7 +25,10 @@ L'utilisateur parle français et n'est pas développeur : réponses courtes, en 
 7. **Déchets** : `T`, `GOLD`, `CHEST`, `BARREL`, bonus `mkPw()`.
 8. **Boucle** : `loop()` puis rendu `COMP` (post-traitement) ou `R.render`.
 9. **Qualité** : `setQ('max'|'norm')` + `fpsMon()`.
-Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mises à jour (`version.json`).
+Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mises à jour (`version.json`, bouton « Vérifier les mises à jour » dans la boutique).
+10. **Personnage** : `models/humain.glb` (avatar humain) + `models/anims.glb` (animations idle/walk/run du X Bot, squelette seul), adaptées par `retarget()`. Visage/tenue : `FOPT`, `buildFace()`, panneau `faceUI()`. À vélo : `pedal()` (pose réglée par `PDY…PFA`).
+11. **Collisions** : `COLS` (boîtes `userData.cols` des groupes, troncs `userData.tr`, `userData.colr`), remplies par `put()`, résolues par `collide()` à pied seulement.
+12. **Parc à conteneurs** : `depot(z)` (quai, bennes `skip()`, clôture `gFence()`, bulles à verre).
 
 ## Pièges connus
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
