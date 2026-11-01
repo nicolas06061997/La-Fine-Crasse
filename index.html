@@ -706,8 +706,9 @@ let tutEl=null;function tutTick(){if(st.tuto>=TUTO.length||$('splash'))return;if
  st.tuto=st.tuto|0;if(TUTO[st.tuto][1]()){st.tuto++;snd(880,.1,'triangle',.06);save();if(st.tuto>=TUTO.length){tutEl.remove();tutEl=null;return}}tutEl.textContent=TUTO[st.tuto][0]}
 if(st.tuto===undefined)st.tuto=(st.total|0)>20?99:0;/* les anciens joueurs ne voient pas le tutoriel */
 // neige en montagne
+/* flocon rond et doux (sinon carrés blancs sur les écrans fins) */function dotT(){const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d'),g2=x.createRadialGradient(16,16,0,16,16,16);g2.addColorStop(0,'rgba(255,255,255,1)');g2.addColorStop(.5,'rgba(255,255,255,.7)');g2.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g2;x.fillRect(0,0,32,32);return new THREE.CanvasTexture(c)}
 const SN=500,snG=new THREE.BufferGeometry(),snP=new Float32Array(SN*3);for(let i=0;i<SN;i++)snP.set([rd(-20,20),rd(0,16),rd(-24,16)],i*3);snG.setAttribute('position',new THREE.BufferAttribute(snP,3));
-const SNOW=new THREE.Points(snG,Object.assign(new THREE.PointsMaterial({color:0xffffff,size:.16,transparent:true,opacity:.9,depthWrite:false}),{userData:{nob:true},customProgramCacheKey:()=>'nobS'}));SNOW.frustumCulled=false;SNOW.visible=false;sc.add(SNOW);
+const SNOW=new THREE.Points(snG,Object.assign(new THREE.PointsMaterial({color:0xffffff,size:.09,map:dotT(),alphaTest:.05,transparent:true,opacity:.95,depthWrite:false}),{userData:{nob:true},customProgramCacheKey:()=>'nobS'}));SNOW.frustumCulled=false;SNOW.visible=false;sc.add(SNOW);
 // ambiance sonore : oiseaux, vagues, tonnerre (sons fabriqués, aucun fichier)
 let ambT=3,flash=0,NB=null;function noise(d,f,v,tp){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(!NB){NB=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);const a=NB.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1}const s=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain(),t=AC.currentTime;s.buffer=NB;fl.type=tp||'lowpass';fl.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+d*.3);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start(t);s.stop(t+d)}catch(e){}}
 function bird(){const b=1800+Math.random()*1500;for(let i=0;i<3+(Math.random()*3|0);i++)snd(b+Math.random()*600,.06,'sine',.012,i*.09)}
@@ -800,7 +801,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.9";
+var APPV="2026-11-02.10";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
