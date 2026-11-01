@@ -47,6 +47,7 @@ button:disabled{opacity:.45}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const SHARE_URL='https://nicolas06061997.github.io/La-Fine-Crasse/';
@@ -358,6 +359,19 @@ function rebuildPlayer(){P.clear();[legL,legR,armL,armR].forEach(l=>l.clear());c
  for(const A of[armL,armR])A.add(cy(.07,.06,.3,HV,0,-.15,0),cy(.06,.05,.28,HV,0,-.44,0),cy(.062,.062,.04,0xcfcfcf,0,-.36,0),sp(.075,0x3a3a3a,0,-.62,0,1,1.2,.9));
  P.add(legL,legR,armL,armR);sh(P)}
 rebuildPlayer();
+// personnage réaliste animé (modèle 3D, tenue jaune fluo) ; le bonhomme simple reste affiché si le chargement échoue
+let HERO=null,HMX=null,HCUR='',HMAT=null;const HACT={},HLP0=new THREE.Vector3();
+try{if(THREE.GLTFLoader)new THREE.GLTFLoader().load('models/ouvrier.glb',g=>{const m=g.scene;/* modèle déjà à l'échelle (≈1,8 m) : la taille se lit sur les os, pas sur la géométrie */
+ HMAT=new THREE.MeshStandardMaterial({color:MC[0xe8dc10].color.clone(),roughness:.5,metalness:.05,skinning:true});const JM=new THREE.MeshStandardMaterial({color:ds(0x2b2f33),roughness:.35,metalness:.4,skinning:true});
+ m.traverse(o=>{if(o.isMesh){o.material=/Joint/i.test(o.material.name)?JM:HMAT;o.castShadow=true;o.frustumCulled=false}});
+ {/* accessoires accrochés aux os (unités du squelette : centimètres) : casquette, sac à dos, gants */const hd=m.getObjectByName('mixamorigHead'),sp2=m.getObjectByName('mixamorigSpine2'),C=MC[0xe8dc10],OR=M(0xff6d00);
+  if(hd){const cp=new THREE.Mesh(new THREE.SphereGeometry(10.5,16,10,0,Math.PI*2,0,Math.PI/2),OR);cp.position.set(0,11,0);const br=new THREE.Mesh(new THREE.CylinderGeometry(9,9,1.2,16,1,false,-Math.PI/2,Math.PI),OR);br.position.set(0,11.5,4);br.scale.z=1.25;hd.add(cp,br)}
+  if(sp2){const bp=new THREE.Group();bp.add(box(30,38,14,0x2e7d32,0,0,0),box(26,10,4,0x256d2a,0,-8,-8.5),box(32,3,15,0xd9d9d9,0,6,0));bp.position.set(0,2,-17);sp2.add(bp)}
+  for(const n of['mixamorigLeftHand','mixamorigRightHand']){const h=m.getObjectByName(n);if(h){const gl=new THREE.Mesh(new THREE.SphereGeometry(5,10,8),OR);gl.position.y=5;gl.scale.set(1,1.3,.8);h.add(gl)}}}
+ P.clear();P.add(m);sh(P);HERO=m;P.rotation.y=Math.PI;HMX=new THREE.AnimationMixer(m);for(const c of g.animations)HACT[c.name]=HMX.clipAction(c);if(HACT.idle){HACT.idle.play();HCUR='idle'}},undefined,()=>{})}catch(e){}
+function heroAnim(dt){if(!HERO)return;HMAT.color.copy(MC[0xe8dc10].color);const v=HLP0.distanceTo(P.position)/Math.max(dt,.001);HLP0.copy(P.position);
+ const want=driving?'idle':v>5.6?'run':v>.4?'walk':'idle';if(want!==HCUR&&HACT[want]){const a=HACT[want].reset().play(),b=HACT[HCUR];if(b)a.crossFadeFrom(b,.25,false);HCUR=want}
+ if(HCUR==='walk')HACT.walk.timeScale=Math.min(1.6,Math.max(.7,v/3.2));if(HCUR==='run')HACT.run.timeScale=Math.min(1.4,Math.max(.8,v/7));if(!driving)P.position.y=0;HMX.update(dt)}
 // palmiers réalistes : tronc animé par le vent, palmes avec folioles
 const frondT=(()=>{const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');x.strokeStyle='#4a5a1c';x.lineWidth=2;x.beginPath();x.moveTo(0,32);x.lineTo(128,32);x.stroke();for(let i=0;i<26;i++){const px=i*4.8;x.strokeStyle=pk(['#2f7a2a','#3f9a32','#4aa83a','#2a6a26']);x.lineWidth=2.4;for(const d of[-1,1]){x.beginPath();x.moveTo(px,32);x.lineTo(px+7,32+d*(26-i*.5));x.stroke()}}const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t})();
 function frondsGeo(){const pos=[],uv=[],nor=[],idx=[];let v=0;for(let f=0;f<10;f++){const a=f/10*6.283+rd(0,.3),L=rd(2.6,3.4),tilt=rd(.15,.5),seg=6;for(let s=0;s<=seg;s++){const t=s/seg,x=t*L,y=t*L*.3*Math.sin(tilt*3)-1.6*t*t*(.4+tilt),w=.55*(1-.45*t)+.05;for(const sd of[-1,1]){pos.push(Math.cos(a)*x-Math.sin(a)*sd*w,y,Math.sin(a)*x+Math.cos(a)*sd*w);uv.push(t,sd<0?0:1);nor.push(0,1,0)}if(s<seg)idx.push(v,v+1,v+2,v+1,v+3,v+2);v+=2}}const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));G.setIndex(idx);return G}
@@ -479,7 +493,7 @@ const flts=[];function floatTxt(t,x,y,z,col){const c=document.createElement('can
 // mer de la plage : petites vagues qui bougent
 const WN=(()=>{const n=128,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d'),d=x.createImageData(n,n),h=(u,v)=>Math.sin(u*6.283*3)+.6*Math.sin((u+v)*6.283*5)+.4*Math.cos(v*6.283*4-u*6.283*2);for(let j=0;j<n;j++)for(let i=0;i<n;i++){const u=i/n,v=j/n,e=1/n,dx=(h(u+e,v)-h(u-e,v))*2,dy=(h(u,v+e)-h(u,v-e))*2,k=(j*n+i)*4;d.data[k]=128+dx*40;d.data[k+1]=128+dy*40;d.data[k+2]=255;d.data[k+3]=255}x.putImageData(d,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(10,2);return t})();
 SEAM.normalMap=WN;SEAM.normalScale.set(.7,.7);SEAM.needsUpdate=true;
-function fx(dt){const nt=Math.max(0,Math.min(1,(.62-DK)/.25)),rain=ev.t>0&&ev.m===1.5,party=ev.t>0&&ev.m===2;
+function fx(dt){heroAnim(dt);const nt=Math.max(0,Math.min(1,(.62-DK)/.25)),rain=ev.t>0&&ev.m===1.5,party=ev.t>0&&ev.m===2;
  POOLM.opacity=.55*nt;BULBM.color.setRGB(1+1.4*nt,.95+1.3*nt,.69+.9*nt);
  HLP.visible=nt>0&&st.veh>=2;if(HLP.visible){HLP.material.opacity=.5*nt;HLP.position.set(CAR.position.x,.08,CAR.position.z-(st.veh>=3?8:7.5))}
  RAIN.visible=rain;if(rain){RAIN.position.set(CAMT.x,0,CAMT.z);for(let i=0;i<RN;i++){let y=rainP[i*6+1]-26*dt;if(y<0)y+=22;rainP[i*6+1]=y;rainP[i*6+4]=y+1.3}rainG.attributes.position.needsUpdate=true}
@@ -495,7 +509,7 @@ let last=performance.now(),tm=0;
 function loop(n){requestAnimationFrame(loop);const dt=Math.min((n-last)/1000,.05);last=n;tm+=dt;
  let ix=jx+(keys.d||keys.arrowright?1:0)-(keys.q||keys.a||keys.arrowleft?1:0),iz=jz+(keys.s||keys.arrowdown?1:0)-(keys.w||keys.z||keys.arrowup?1:0);
  const l=Math.hypot(ix,iz);if(driving){const k=l>.1?Math.min(l,1)/l:0;drv+=(-iz*k*(st.veh<2?11:st.veh===2?16:19)-drv)*Math.min(1,dt*2.5);CAR.position.z-=drv*dt;CAR.position.x=Math.max(1.2,Math.min(4,CAR.position.x+ix*k*5*dt));P.position.set(CAR.position.x,st.veh<2?.5:0,CAR.position.z-(st.veh<2?0:4));P.rotation.y=Math.PI}else if(FP&&l>.1){const k=Math.min(l,1)/l;fpYaw-=ix*k*dt*2;P.position.x+=Math.sin(fpYaw)*(-iz)*k*st.speed*(pwT.turbo>0?1.6:1)*dt;P.position.z+=Math.cos(fpYaw)*(-iz)*k*st.speed*(pwT.turbo>0?1.6:1)*dt;P.rotation.y=fpYaw;P.position.y=Math.abs(Math.sin(tm*10))*.06}else if(l>.1){const k=Math.min(l,1)/l;P.position.x+=ix*k*st.speed*(pwT.turbo>0?1.6:1)*dt;P.position.z+=iz*k*st.speed*(pwT.turbo>0?1.6:1)*dt;P.rotation.y=Math.atan2(ix,iz);P.position.y=Math.abs(Math.sin(tm*10))*.12}else P.position.y=0;
- while(nextZ>P.position.z-75)spawn();
+ while(nextZ>P.position.z-90)spawn();
  P.position.x=Math.max(-19,Math.min(19,P.position.x));P.position.z=Math.max(BND.z1+.5,Math.min(BND.z0-.5,P.position.z));
  const sw=l>.1?Math.sin(tm*11)*.7:0;legL.rotation.x=sw;legR.rotation.x=-sw;armL.rotation.x=-sw;armR.rotation.x=sw;
  {const dz=P.position.z+(driving&&st.veh<2?0:4)-CAR.position.z,d=Math.abs(dz);if(d>1.5)CAR.position.z+=Math.sign(dz)*Math.min(st.speed*1.15*(1+Math.max(0,d-12)/6)*dt,d-1.5);if(!driving)CAR.position.x+=(3.3-CAR.position.x)*Math.min(1,dt*4);CAR.rotation.y=driving?-ix*.15:0}
@@ -527,13 +541,13 @@ function loop(n){requestAnimationFrame(loop);const dt=Math.min((n-last)/1000,.05
    if(u.s!=='p'){for(const o of trf){const v=o.userData;if(o!==c&&!v.on&&Math.abs(o.position.x-c.position.x)<1.4&&o.position.z<c.position.z){const d=c.position.z-o.position.z-4.2;if(d<10)sp=Math.min(sp,v.cur+Math.max(0,d-2)*.9)}}}
    u.cur+=(sp-u.cur)*Math.min(1,dt*2);c.position.z-=u.cur*dt;const nx=c.position.x+(tx-c.position.x)*Math.min(1,dt*3);c.rotation.y=Math.max(-.4,Math.min(.4,(c.position.x-nx)/(u.cur*dt+.05)));c.position.x=nx}
   if(Math.abs(c.position.z-P.position.z)>100||c.position.z<BND.z1||c.position.z>BND.z0){sc.remove(c);trf.splice(i,1)}}}
- dl.position.set(P.position.x+8,18,P.position.z+6);dl.target.position.copy(P.position);cloudG.position.set(P.position.x,0,P.position.z);
+ dl.position.set(P.position.x+8,18,P.position.z-4);dl.target.position.set(P.position.x,0,P.position.z-10);cloudG.position.set(P.position.x,0,P.position.z);
  const q=(tm*2)|0;if(q!==lastC){lastC=q;for(let i=scen.length-1;i>=0;i--)if(scen[i].position.z>P.position.z+42){sc.remove(scen[i]);scen.splice(i,1)}}
  for(let i=items.length-1;i>=0;i--){const o=items[i],d=Math.hypot(o.m.position.x-P.position.x,o.m.position.z-P.position.z);
   if(!driving&&d<st.radius*(pwT.mag>0?2.5:1)&&o.pw){usePw(o);sc.remove(o.m);if(o.bm)sc.remove(o.bm);items.splice(i,1);continue}
 if(!driving&&d<st.radius*(pwT.mag>0?2.5:1)){if(carried<st.cap){carried++;combo=(tm-lastPick<3)?combo+1:1;lastPick=tm;cmult=1+Math.min(4,Math.floor(combo/5))*.5;bestMult=Math.max(bestMult,cmult);carriedV+=o.v*cmult*(ev.t>0?ev.m:1)*(pwT.x2>0?2:1);snd(480+Math.min(combo,14)*45,.07,'triangle');try{navigator.vibrate(12)}catch(e){}st.total++;st.col=st.col||{};if(o.nm){if(!st.col[o.nm]){st.col[o.nm]=0;newDisc(o.nm)}st.col[o.nm]++}{const nl=Math.floor(Math.sqrt(st.total/8))+1;if(nl>st.lvl){st.lvl=nl;st.money+=nl*20;toast('⭐ Niveau '+nl+' ! +'+nl*20+' €');jingle();shk=.5}xpUpd()}pop(o.m.position.x,o.m.position.z,o.v>=10?0xffd700:o.v>1?0x4cc9f0:0xffd23f);mis.p++;if(mis.p>=mis.g){st.money+=mis.r;toast('🎯 Mission réussie : +'+mis.r+' €');mis={g:mis.g+8,p:0,r:Math.round(mis.r*1.5)}}misUpd();sc.remove(o.m);if(o.bm)sc.remove(o.bm);mapColl[o.mp]=(mapColl[o.mp]|0)+1;items.splice(i,1);hud()}else toast("Sac plein ! Va à la voiture 🚗")}}
  {const nr=!driving&&carried>0&&Math.hypot(CAR.position.x-P.position.x,CAR.position.z-P.position.z)<3.6;if(nr&&trailer<st.tcap){const n=Math.min(carried,st.tcap-trailer),mv=Math.round(carriedV*n/carried);trailer+=n;trailerV+=mv;carried-=n;carriedV-=mv;toast('Chargé dans la remorque : +'+n);hud()}else if(nr)toast('Remorque pleine ! Conduis-la à la déchetterie 🏭')}
- P.visible=!FP&&(!driving||st.veh<2);if(FP){let ex,ey,ez,yw=fpYaw;if(driving){ex=CAR.position.x;ey=st.veh<2?1.5:st.veh===2?1.25:2;ez=CAR.position.z+(st.veh<2?0:st.veh===2?-3:-3.1);yw=Math.PI-ix*.25}else{ex=P.position.x;ey=1.72+P.position.y;ez=P.position.z}cam.position.set(ex+(Math.random()-.5)*shk*.2,ey,ez);cam.lookAt(ex+Math.sin(yw)*10,ey-.1,ez+Math.cos(yw)*10)}else{const CT=driving?CAR.position:P.position;if(CAMT.distanceTo(CT)>25)CAMT.copy(CT);else CAMT.lerp(CT,1-Math.exp(-dt*(driving?6:9)));cam.position.set(CAMT.x+(Math.random()-.5)*shk,11+(Math.random()-.5)*shk,CAMT.z+11);cam.lookAt(CAMT.x,1.2,CAMT.z)}
+ P.visible=!FP&&(!driving||st.veh<2);if(FP){let ex,ey,ez,yw=fpYaw;if(driving){ex=CAR.position.x;ey=st.veh<2?1.5:st.veh===2?1.25:2;ez=CAR.position.z+(st.veh<2?0:st.veh===2?-3:-3.1);yw=Math.PI-ix*.25}else{ex=P.position.x;ey=1.72+P.position.y;ez=P.position.z}cam.position.set(ex+(Math.random()-.5)*shk*.2,ey,ez);cam.lookAt(ex+Math.sin(yw)*10,ey-.1,ez+Math.cos(yw)*10)}else{const CT=driving?CAR.position:P.position;if(CAMT.distanceTo(CT)>25)CAMT.copy(CT);else CAMT.lerp(CT,1-Math.exp(-dt*(driving?6:9)));/* caméra de poursuite : derrière et au-dessus du personnage, la route devant */const cb=driving?(st.veh<2?[5.2,8,-7]:[6.5,10.5,-9]):[4.4,6.8,-6.5];cam.position.set(CAMT.x+(Math.random()-.5)*shk*.5,cb[0]+(Math.random()-.5)*shk*.5,CAMT.z+cb[1]);cam.lookAt(CAMT.x,1.3,CAMT.z+cb[2])}
 fx(dt);if(COMP)COMP.render();else R.render(sc,cam);fpsMon(dt)}
 requestAnimationFrame(loop);
 </script>
@@ -542,7 +556,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-10-30.4";
+var APPV="2026-11-01.2";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
