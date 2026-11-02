@@ -20,7 +20,7 @@ L'utilisateur parle français et n'est pas développeur : réponses courtes, en 
 2. **Boutique** : tableau `SHOP` (réinitialisé par `SHOP.length=0;SHOP.push(...)`), rendu par `render()`.
 3. **Scène** : renderer, lumières, ciel (dôme), sols, route, joueur (`P`), véhicule (`CAR`, `buildCar()`).
 4. **Virages** : patch de shader (`THREE.Material.prototype.onBeforeCompile`, uniforms `BU`, `BT`). La logique reste en ligne droite sur l'axe -Z.
-5. **Zones** : 300 m chacune (`biomeOf(z)` : campagne, plage, montagne, autoroute, forêt, zone industrielle ; noms `BNAME`, musique transposée `MTR`). `NM(m)=50+25*m` déchets. `buildBounds(m)`, `mapDoneUI()`, `goMap()`.
+5. **Zones** : 300 m chacune (`biomeOf(z)` : campagne, plage, montagne, autoroute, forêt, zone industrielle, ville ; noms `BNAME`, musique transposée `MTR`). `NM(m)=50+25*m` déchets. `buildBounds(m)`, `mapDoneUI()`, `goMap()`.
 6. **Décor** : `scenery(z)` appelé par `spawn()` tous les 6 m ; `tree()`, `palm()`, `grass()`, `tufts()`, `town()`, `depot()`, `wareBuild()`.
 7. **Déchets** : `T`, `GOLD`, `CHEST`, `BARREL`, bonus `mkPw()`.
 8. **Boucle** : `loop()` puis rendu `COMP` (post-traitement) ou `R.render`.
@@ -32,6 +32,8 @@ Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mis
 
 13. **Rejouabilité** : défis du jour + coffre (`dqDay`, `dqAdd`, `dqUI`, bouton 📋), codes cadeaux (`CODES`, `useCode`), tutoriel (`TUTO`, `st.tuto`), neige/orage/sons d'ambiance (`ambient`). Progression de zone sauvegardée : `st.got`, `st.mt`, `SKIP`.
 14. **Carte des zones** : `mapUI()` (bouton 🗺️), `travelTo(k)` (vide et reconstruit le monde), `st.maxMap`, `st.stars`, `st.gotz`. **Plage** : mer `SEAM`, sable mouillé, vagues `WAVES`, aileron `FIN` (`beachTick`). **Piétons** : clones SkeletonUtils du personnage (`pedTick`, 2 en qualité normale, 4 en max). Mémoire : `freeObj()` à chaque suppression de décor.
+
+15. **Modèles Kenney (CC0)** dans `models/kenney/{car,sub,com,nat}` : `KLIST` chargé au démarrage, `kget(chemin, échelle)` clone, `kcar(park)` voiture (face +Z, tournée de π). Utilisés : circulation (`mkCar`), voitures garées, zone Ville (`bm===6`), forêt, montagne, tracteur.
 
 ## Pièges connus
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
