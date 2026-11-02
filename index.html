@@ -368,14 +368,34 @@ function tree(){const t=new THREE.Group();const k=new THREE.Mesh(TG,M(0x6d4c41))
  else{const f=new THREE.Mesh(SG,M(pk([0x388e3c,0x558b2f,0x7cb342,0xd9822b])));f.position.y=2.8;f.scale.set(1.5,1.3,1.5);t.add(f)}return t}
 function bench(){const b=new THREE.Group();b.userData.colr=.6;b.add(box(1.6,.1,.5,0x8d6e63,0,.5,0),box(1.6,.5,.08,0x8d6e63,0,.85,-.22),box(.1,.5,.4,0x37474f,-.7,.25,0),box(.1,.5,.4,0x37474f,.7,.25,0));return b}
 function lamp(s){const l=new THREE.Group();l.userData.colr=.18;l.add(box(.12,4,.12,0x37474f,0,2,0),box(.9,.1,.14,0x37474f,-s*.4,4,0));const bu=new THREE.Mesh(BULBG,BULBM);bu.position.set(-s*.8,3.9,0);const pl=new THREE.Mesh(POOLG,POOLM);pl.rotation.x=-Math.PI/2;pl.position.set(-s*1.2,.07,0);pl.renderOrder=2;l.add(bu,pl);return l}
-function scenery(z){const zd=depZ(z);if(zd<=z&&zd>z-6)depot(zd);{const wzc=-300*Math.max(0,Math.floor(-z/300))-26;if(z<0&&wzc<=z&&wzc>z-6)WHL.push({z:wzc,o:put(wareBuild(),0,0,wzc,1,0)})}if(inTown(z)&&biomeOf(z)===0)return town(z);const bm=biomeOf(z);for(const s of[-1,1]){if(s===1&&(inDepot(z)||inDepot(z-6)))continue;if(bm>0){biomeSide(bm,s,z);continue}put(grass(s),0,0,z-3,1,0);
- for(let i=0;i<2;i++)put(tree(),s*rd(15,40),0,z-rd(0,6),rd(1.3,2.5));
- if(Math.random()<.4)put(tree(),s*rd(10,14),0,z-rd(0,6),rd(.9,1.4));
- for(let i=0;i<2;i++)put(new THREE.Mesh(BUSHG,pk(LMS)),s*rd(8,16),0,z-rd(0,6),rd(.8,1.4));
- if(Math.random()<.35)put(new THREE.Mesh(SG,M(0x8a8a8a)),s*rd(8,14),0,z-rd(0,6),rd(.3,.6));
- if(Math.random()<.3){const f=new THREE.Group();for(let i=0;i<3;i++){const m=new THREE.Mesh(SG,M(pk([0xffeb3b,0xff5252,0xffffff,0xe040fb])));m.scale.setScalar(.09);m.position.set(rd(-.6,.6),.1,rd(-.6,.6));f.add(m)}put(f,s*rd(7.8,13),0,z-rd(0,6))}
- if(Math.random()<.25)put(bench(),s*6.4,0,z-rd(1,5),1,-s*Math.PI/2);
- if(Math.random()<.35)put(lamp(s),s*6.9,0,z-rd(1,5),1,0)}}
+function scenery(z){const zd=depZ(z);if(zd<=z&&zd>z-6)depot(zd);{const wzc=-300*Math.max(0,Math.floor(-z/300))-26;if(z<0&&wzc<=z&&wzc>z-6)WHL.push({z:wzc,o:put(wareBuild(),0,0,wzc,1,0)})}const bm=biomeOf(z);for(const s of[-1,1]){if(s===1&&(inDepot(z)||inDepot(z-6)))continue;if(bm>0){biomeSide(bm,s,z);continue}countrySide(s,z)}}
+// campagne : champs (blé, labour, cultures), clôture en bois, haies, ballots de foin, vaches et moutons, fermes avec grange et silo
+function countrySide(s,z){const zz=z-3,k=((-z/6)|0),blk=((-z/36)|0)+(s<0?7:0),fm=FIELDM[(blk*7919)%FIELDM.length];
+ put(tufts(s,[[.3,.55,.18],[.36,.6,.2],[.28,.5,.16]],45,7.6,11),0,0,zz,1,0);
+ {const f=new THREE.Mesh(FIELDG,fm);f.rotation.x=-Math.PI/2;f.position.set(s*27,.04,zz);sc.add(f);scen.push(f);f.frustumCulled=false}
+ put(box(.12,.9,.12,0x7a5a36,0,0,0),s*11,.45,zz-3,1,0);put(box(.06,.1,6,0x8d6a45,0,0,0),s*11,.75,zz,1,0);put(box(.06,.1,6,0x8d6a45,0,0,0),s*11,.42,zz,1,0);
+ if(k%9===(s<0?2:6))put(farm(s),s*30,0,zz-6,1,0);
+ else{if(fm===FIELDM[0]&&Math.random()<.5)for(let i=0;i<2;i++)put(hay(),s*rd(14,40),0,zz+rd(-3,3),1,rd(0,3));
+  if(fm===FIELDM[3]&&Math.random()<.55)put(Math.random()<.6?cow():sheep(),s*rd(14,36),0,zz+rd(-3,3),1,rd(0,6.28));
+  if(Math.random()<.18)put(tree(),s*rd(12,40),0,zz+rd(-3,3),rd(1.3,2.2));
+  if(k%5===0)for(let i=0;i<3;i++)put(new THREE.Mesh(BUSHG,pk(LMS)),s*rd(11.6,12.4),0,zz-2+i*2,rd(1,1.4))}
+ if(Math.random()<.25){const f=new THREE.Group();for(let i=0;i<3;i++){const m=new THREE.Mesh(SG,M(pk([0xffeb3b,0xff5252,0xffffff,0xb388ff])));m.scale.setScalar(.08);m.position.set(rd(-.6,.6),.08,rd(-.6,.6));f.add(m)}put(f,s*rd(7.8,10.5),0,zz+rd(-2,2))}}
+const FIELDG=new THREE.PlaneGeometry(32,6.02);
+const FIELDM=(()=>{const mk=(f,rx,ry)=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');f(x);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return new THREE.MeshStandardMaterial({map:t,bumpMap:t,bumpScale:1.5,roughness:.95})};
+ const rows=(x,bg,cols,w)=>{x.fillStyle=bg;x.fillRect(0,0,256,256);for(let i=0;i<256;i+=w){x.fillStyle=pk(cols);x.fillRect(i,0,w*.55,256)}for(let i=0;i<5000;i++){x.fillStyle=pk(cols);x.fillRect(rd(0,256),rd(0,256),rd(1,2.5),rd(2,5))}};
+ return [mk(x=>rows(x,'#c9a84a',['#e0c35c','#b8953c','#d9b752','#f0d878'],10),4,1),/* blé */mk(x=>rows(x,'#6b4a2e',['#5a3c24','#7d5838','#4e331e'],12),4,1),/* labour */mk(x=>rows(x,'#4f7d2e',['#5f9a36','#3f6a24','#6aa83c'],9),4,1),/* cultures */mk(x=>{x.fillStyle='#5a9a3e';x.fillRect(0,0,256,256);for(let i=0;i<9000;i++){x.fillStyle=pk(['#4e8a34','#6aae48','#7cbd52','#3f7a2c']);x.fillRect(rd(0,256),rd(0,256),1.5,rd(2,5))}},5,1)/* prairie */]})();
+function hay(){const G=new THREE.Group(),h=new THREE.Mesh(CYL2(.7,.7,1.2,16),M(0xd9b24c));h.rotation.z=Math.PI/2;h.position.y=.7;G.add(h);const e=new THREE.Mesh(CYL2(.55,.55,1.22,16),M(0xc49a38));e.rotation.z=Math.PI/2;e.position.y=.7;G.add(e);G.userData.colr=.8;return G}
+function cow(){const G=new THREE.Group(),W=0xf2f2f2,B=0x222222,b=box(.7,.7,1.5,W,0,1,0);G.add(b,box(.72,.4,.5,B,0,1.1,.2),box(.4,.4,.5,W,0,1.25,.95),box(.34,.25,.2,0xe8a0a0,0,1.12,1.22),box(.08,.12,.08,0xddd,-.16,1.5,.9),box(.08,.12,.08,0xddd,.16,1.5,.9));for(const x of[-.25,.25])for(const zz of[-.55,.55])G.add(box(.15,.65,.15,W,x,.33,zz));G.userData.colr=.9;return G}
+function sheep(){const G=new THREE.Group(),w=new THREE.Mesh(new THREE.SphereGeometry(.5,10,8),M(0xf0ece2));w.scale.set(.8,.7,1.1);w.position.y=.75;G.add(w,box(.25,.28,.3,0x2b2b2b,0,.85,.55));for(const x of[-.18,.18])for(const zz of[-.3,.3])G.add(box(.08,.45,.08,0x2b2b2b,x,.22,zz));G.userData.colr=.6;return G}
+function farm(s){const G=new THREE.Group(),f=-s;// maison : murs crème, toit rouge à deux pans, cheminée, porte, fenêtres
+ const house=new THREE.Group();house.add(box(8,4,6,0xefe4cc,0,2,0));const rf=new THREE.Shape();rf.moveTo(-4.4,0);rf.lineTo(0,2.6);rf.lineTo(4.4,0);rf.lineTo(-4.4,0);const rg=new THREE.ExtrudeGeometry(rf,{depth:6.6,bevelEnabled:false});rg.translate(0,4,-3.3);house.add(new THREE.Mesh(rg,M(0xa8432c)),box(.7,1.6,.7,0x8a7a6a,2,6,1));
+ house.add(box(.08,2,1.1,0x6d4c41,f*4.04,1,0));for(const zz of[-2,2])house.add(box(.08,1,1,0x9fc3d9,f*4.04,2.4,zz),box(.1,1.1,.12,0xffffff,f*4.06,2.4,zz));house.rotation.y=Math.PI/2;house.position.set(0,0,-5);G.add(house);
+ // grange rouge et silo
+ const barn=new THREE.Group();barn.add(box(9,5,7,0xa33a2a,0,2.5,0));const br=new THREE.Shape();br.moveTo(-5,0);br.lineTo(-3.2,2.2);br.lineTo(0,3.2);br.lineTo(3.2,2.2);br.lineTo(5,0);br.lineTo(-5,0);const bg2=new THREE.ExtrudeGeometry(br,{depth:7.4,bevelEnabled:false});bg2.translate(0,5,-3.7);barn.add(new THREE.Mesh(bg2,M(0x5a5f63)),box(.1,3.4,3,0xf2f2f2,f*4.55,1.7,0),box(.12,3,2.6,0x7a2a1e,f*4.56,1.6,0));barn.rotation.y=Math.PI/2;barn.position.set(0,0,8);G.add(barn);
+ G.add(cy(1.6,1.6,10,0xb8c0c8,f*-5,5,14));const d=new THREE.Mesh(new THREE.SphereGeometry(1.6,14,8,0,Math.PI*2,0,Math.PI/2),M(0x9aa2aa));d.position.set(f*-5,10,14);G.add(d);
+ G.add(hay(),hay());G.children[G.children.length-1].position.set(f*6,0,4);G.children[G.children.length-2].position.set(f*6,0,6);
+ G.userData.cols=[[0,-5,6,8.4],[0,8,7.4,9.4],[f*-5,14,3.4,3.4]];return G}
+
 function jit(g,a){const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),n=1+a*Math.sin(x*3.7+y*2.1)*Math.cos(z*3.1+x*1.7);p.setXYZ(i,x*n,y*n,z*n)}g.computeVertexNormals();return g}
 function cluster(specs){const pos=[],col=[];for(const s of specs){let g=s[0].clone();if(g.index)g=g.toNonIndexed();g.scale(s[4],s[5],s[6]);g.translate(s[1],s[2],s[3]);const p=g.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i),k=.45+.55*Math.min(1,Math.max(0,y/4.2));pos.push(p.getX(i),y,p.getZ(i));col.push(k,k,k)}}const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.computeVertexNormals();return G}
 const FOL=[0,1,2].map(()=>cluster([[jit(new THREE.IcosahedronGeometry(1,1),.22),0,2.8,0,1.5,1.2,1.5],[jit(new THREE.IcosahedronGeometry(1,1),.25),.7,2.3,.4,1,.9,1],[jit(new THREE.IcosahedronGeometry(1,1),.25),-.6,2.5,-.5,1.1,1,1.1],[jit(new THREE.IcosahedronGeometry(1,1),.22),0,3.6,.1,.9,.8,.9]]));
@@ -880,7 +900,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.18";
+var APPV="2026-11-02.19";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
