@@ -236,7 +236,7 @@ function biomeSide(bm,s,z){const zz=z-3,slab=(c,w,x)=>put(box(w,.05,6,c,0,0,0),s
  else if(bm===4){/* forêt : arbres serrés, fougères, souches */put(tufts(s,[[.18,.42,.12],[.22,.5,.14],[.3,.45,.16]],120,8,30),0,0,zz,1,0);for(let i=0;i<4;i++)put(tree(),s*rd(9,38),0,zz+rd(-3,3),rd(1.4,2.6));if(Math.random()<.5)put(new THREE.Mesh(SG,M(0x6b5a40)),s*rd(8,14),.2,zz,rd(.3,.5));if(Math.random()<.3){const st2=new THREE.Group();st2.add(cy(.35,.4,.5,0x6d4c41,0,.25,0),cy(.3,.3,.02,0xc8a882,0,.51,0));st2.userData.colr=.45;put(st2,s*rd(8,12),0,zz,1)}}
  else if(bm===5){/* zone industrielle : grillage, entrepôts en tôle ondulée, conteneurs, cuves, cheminées qui fument, palettes */const k=((-z/6)|0);
   {const f=new THREE.Mesh(CHG,CHM);f.position.set(s*7.8,1,zz);f.rotation.y=Math.PI/2;sc.add(f);scen.push(f);f.frustumCulled=false;put(box(.08,2.1,.08,0x5d6670,0,0,0),s*7.8,1.05,zz-3,1,0);put(box(.05,.05,6,0x5d6670,0,0,0),s*7.8,2.05,zz,1,0)}
-  const off=s<0?0:2;if(k%4===off)put(warehouse(s),s*(15.5),0,zz-9,1,0);
+  const off=s<0?0:2;if(k%4===off)put(warehouse(s),s*17.5,0,zz-9,1,0);
   else if(k%4===(off+2)%4){const r=Math.random();if(r<.4)put(tanks(),s*rd(12,15),0,zz,1,0);else if(r<.75)put(contStack(),s*rd(10.5,14),0,zz,1,0);else put(chimney(),s*rd(13,17),0,zz,1,0)}
   if(Math.random()<.4)put(pallets(),s*rd(8.6,9.6),0,zz+rd(-2,2),1,rd(0,3))}
  else{/* autoroute : talus d'herbe, glissière, murs antibruit, grands lampadaires, portiques et panneaux bleus, terre-plein central */const k=((-z/6)|0);put(tufts(s,[[.3,.42,.18],[.36,.46,.2]],60,9,17),0,0,zz,1,0);
@@ -644,8 +644,10 @@ function depot(z){const D=new THREE.Group(),cols=[];D.userData.cols=cols;const C
 const COLS=[];function addCols(o){const u=o.userData,s=o.scale.x;if(u.cols)for(const c of u.cols)COLS.push({b:1,x:o.position.x+c[0]*s,z:o.position.z+c[1]*s,hw:c[2]*s/2,hd:c[3]*s/2});else if(u.tr&&Math.abs(o.position.x)<20)COLS.push({x:o.position.x,z:o.position.z,r:.35*s});else if(u.colr)COLS.push({x:o.position.x,z:o.position.z,r:u.colr})}
 function collide(p,pr){for(const c of COLS){if(Math.abs(c.z-p.z)>14)continue;if(c.b){const dx=p.x-c.x,dz=p.z-c.z,ox=c.hw+pr-Math.abs(dx),oz=c.hd+pr-Math.abs(dz);if(ox>0&&oz>0){if(ox<oz)p.x+=Math.sign(dx||1)*ox;else p.z+=Math.sign(dz||1)*oz}}else{const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz),m=c.r+pr;if(d<m&&d>1e-4){p.x+=dx/d*(m-d);p.z+=dz/d*(m-d)}}}}
 const items=[];let nextZ=-2;
-function spawn(){if(inDepot(nextZ)){scenery(nextZ);nextZ-=6;return}const nc=cnts(Math.floor(-nextZ/300))[(-nextZ-2)/6]|0;for(let i=0;i<nc;i++){if(SKIP>0&&Math.floor(-nextZ/300)===st.map){SKIP--;continue}const rk=st.owned.includes('radar')?2:1,t=Math.random()<.02*rk?CHEST:Math.random()<.04*rk?BARREL:Math.random()<.04*rk?GOLD:Math.random()<.65?pick(T.slice(0,4)):pick(T.slice(4));const o=t();const side=Math.random()<.5?-1:1;
- o.m.position.x+=side*(inTown(nextZ)?rnd(7.5,10.5):rnd(7.5,15));o.m.position.z+=nextZ-rnd(0,6);o.m.rotation.y=rnd(0,6.28);sc.add(o.m);sh(o.m);o.mp=Math.floor(-nextZ/300);o.nm=tname(t);items.push(o)}if(Math.random()<.05)mkPw();scenery(nextZ);nextZ-=6}
+// un déchet ne doit jamais apparaître dans un bâtiment, une cuve ou un conteneur : on le ramène près du trottoir
+function freeSpots(z){for(const o of items){const p=o.m.position;if(p.z>z+16||p.z<z-24)continue;for(const c of COLS){if(!c.b)continue;if(Math.abs(p.x-c.x)<c.hw+.4&&Math.abs(p.z-c.z)<c.hd+.4){p.x=Math.sign(p.x||1)*rnd(7.3,7.9);if(o.bm)o.bm.position.x=p.x;break}}}}
+function spawn(){if(inDepot(nextZ)){scenery(nextZ);freeSpots(nextZ);nextZ-=6;return}const nc=cnts(Math.floor(-nextZ/300))[(-nextZ-2)/6]|0;for(let i=0;i<nc;i++){if(SKIP>0&&Math.floor(-nextZ/300)===st.map){SKIP--;continue}const rk=st.owned.includes('radar')?2:1,t=Math.random()<.02*rk?CHEST:Math.random()<.04*rk?BARREL:Math.random()<.04*rk?GOLD:Math.random()<.65?pick(T.slice(0,4)):pick(T.slice(4));const o=t();const side=Math.random()<.5?-1:1;
+ o.m.position.x+=side*(inTown(nextZ)||biomeOf(nextZ)===5?rnd(7.4,9.5):rnd(7.5,15));o.m.position.z+=nextZ-rnd(0,6);o.m.rotation.y=rnd(0,6.28);sc.add(o.m);sh(o.m);o.mp=Math.floor(-nextZ/300);o.nm=tname(t);items.push(o)}if(Math.random()<.05)mkPw();const n0=items.length;scenery(nextZ);freeSpots(nextZ);nextZ-=6}
 for(let z=40;z>-2;z-=6)scenery(z);
 // état de jeu
 let carried=0,carriedV=0;
@@ -878,7 +880,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.17";
+var APPV="2026-11-02.18";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
