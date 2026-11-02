@@ -142,12 +142,15 @@ for(const A of[armL,armR])A.add(cy(.07,.06,.3,HV,0,-.15,0),cy(.06,.05,.28,HV,0,-
 P.add(legL,legR,armL,armR);sh(P);
 // véhicule
 const CAR=new THREE.Group();CAR.position.set(8,0,3);sc.add(CAR);let loadG;
-const wheel=(x,z,r=.38)=>{const w=new THREE.Group();w.add(new THREE.Mesh(new THREE.CylinderGeometry(r,r,.3,14),M(0x1a1a1a)),new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,.32,10),M(0xcfd8dc)));w.rotation.z=Math.PI/2;w.position.set(x,r,z);return w};
+const wheel=(x,z,r=.38)=>{const w=new THREE.Group(),tr=new THREE.Mesh(new THREE.TorusGeometry(r*.78,r*.24,10,28),M(0x161616));tr.rotation.x=Math.PI/2;tr.scale.set(1,1,1.15);w.add(tr,new THREE.Mesh(new THREE.CylinderGeometry(r*.6,r*.6,.26,20),M(0xcfd8dc)),new THREE.Mesh(new THREE.CylinderGeometry(r*.18,r*.18,.3,10),M(0x555555)));w.rotation.z=Math.PI/2;w.position.set(x,r,z);return w};
 const lt=(c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.35,.18,.06),MB(c));m.position.set(x,y,z);return m};
+const CYC={},CYL2=(a,b,h,n=8)=>CYC[a+'_'+b+'_'+h+'_'+n]||(CYC[a+'_'+b+'_'+h+'_'+n]=new THREE.CylinderGeometry(a,b,h,n)),MTC={},MTL2=c=>MTC[c]||(MTC[c]=new THREE.MeshStandardMaterial({color:ds(c),roughness:.3,metalness:.85}));
+// tube entre deux points (cadres de vélo, barres)
+const TUBV=new THREE.Vector3(),TUBQ=new THREE.Quaternion(),TUBY=new THREE.Vector3(0,1,0);function tube(a,b,r,c,mat){const d=TUBV.set(b[0]-a[0],b[1]-a[1],b[2]-a[2]),L=d.length(),m=new THREE.Mesh(CYL2(r,r,L,8),mat||M(c));m.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);m.quaternion.copy(TUBQ.setFromUnitVectors(TUBY,d.normalize()));return m}
 function buildCar(){while(CAR.children.length)CAR.remove(CAR.children[0]);const A=(...o)=>o.forEach(m=>CAR.add(m));const T2=st.veh>=3;loadG=new THREE.Group();if(st.veh<2){bikeBuild(A);return}
- if(T2){A(box(2,.3,5.4,0x333,0,.55,-.3),box(2,.62,1.7,0x1e88e5,0,1.03,-2.3),box(2,.12,1.7,0x1e88e5,0,1.81,-2.3),box(.1,.45,.1,0x1e88e5,-.95,1.57,-3.1),box(.1,.45,.1,0x1e88e5,.95,1.57,-3.1),box(.1,.45,.1,0x1e88e5,-.95,1.57,-1.5),box(.1,.45,.1,0x1e88e5,.95,1.57,-1.5),box(1.9,.45,.06,0x1b3a57,0,1.57,-1.48),/* cabine creuse vitrée : on voit le conducteur */box(2.04,.45,1.2,0x1b3a57,0,1.65,-2.35),box(1.9,.45,.06,0x1b3a57,0,1.65,-3.17),box(2.1,.2,.2,0x444,0,.6,-3.2),box(2,.14,3.2,0x555,0,.9,.9),box(.1,.85,3.2,0x8d6e63,-.95,1.35,.9),box(.1,.85,3.2,0x8d6e63,.95,1.35,.9),box(2,.85,.1,0x8d6e63,0,1.35,2.5),box(2,.85,.1,0x8d6e63,0,1.35,-.7),lt(0xfff3b0,-.7,.95,-3.2),lt(0xfff3b0,.7,.95,-3.2),lt(0xff1744,-.7,.8,2.4),lt(0xff1744,.7,.8,2.4),wheel(-1.05,-2.4,.45),wheel(1.05,-2.4,.45),wheel(-1.05,1.5,.45),wheel(1.05,1.5,.45));
-  const b=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),MB(0xff9100));b.position.set(0,1.98,-2.3);A(b)}
- else{A((()=>{const g=carModel(M(0xc62828));g.scale.setScalar(.85);g.position.set(0,0,-1.5);return g})(),box(.15,.15,.9,0x333,0,.5,.6),box(1.7,.12,2.4,0x666,0,.55,2.2),box(.08,.5,2.4,0x9e9e9e,-.85,.85,2.2),box(.08,.5,2.4,0x9e9e9e,.85,.85,2.2),box(1.7,.5,.08,0x9e9e9e,0,.85,3.4),box(1.7,.5,.08,0x9e9e9e,0,.85,1),wheel(-.95,2.7),wheel(.95,2.7))}
+ if(T2){vanBuild(A)}
+
+ else{A((()=>{const g=carModel(M(0xc62828));g.scale.setScalar(.85);g.position.set(0,0,-1.5);return g})(),tube([-.5,.5,1],[0,.5,.35],.04,0x333333),tube([.5,.5,1],[0,.5,.35],.04,0x333333),box(1.7,.1,2.4,0x555555,0,.55,2.2),box(.06,.5,2.4,0xb0b6bb,-.85,.85,2.2),box(.06,.5,2.4,0xb0b6bb,.85,.85,2.2),box(1.7,.5,.06,0xb0b6bb,0,.85,3.4),box(1.7,.5,.06,0xb0b6bb,0,.85,1),box(1.74,.05,.08,0x8a9096,0,1.1,3.4),box(.08,.05,2.44,0x8a9096,-.85,1.1,2.2),box(.08,.05,2.44,0x8a9096,.85,1.1,2.2),wheel(-.95,2.5),wheel(.95,2.5),box(.3,.06,.8,0x222222,-.95,.85,2.5),box(.3,.06,.8,0x222222,.95,.85,2.5),lt(0xff1744,-.65,.6,3.44),lt(0xff1744,.65,.6,3.44))}
  [[1,.5,.8,0xc8a165,-.3,.25,-.4],[.8,.35,.7,0x7b5aa6,.35,.18,.5],[.6,.5,.6,0xf5f5f5,0,.75,0],[.5,.3,.5,0x1976d2,-.3,.55,.4]].forEach(a=>loadG.add(box(...a)));
  {const sg=signMesh();sg.position.set(0,T2?2.3:1.6,T2?2.65:3.5);CAR.add(sg,box(.08,.9,.08,0x555,-.55,T2?2:1.2,T2?2.6:3.45),box(.08,.9,.08,0x555,.55,T2?2:1.2,T2?2.6:3.45))}
  loadG.position.set(0,T2?.97:.62,T2?.9:2.2);if(T2){loadG.scale.x=loadG.scale.z=1.4}{const cT=(()=>{const c=document.createElement('canvas');c.width=128;c.height=32;const x=c.getContext('2d');for(let i=-2;i<10;i++){x.fillStyle=i%2?'#f2f2f2':'#c62828';x.beginPath();x.moveTo(i*16,32);x.lineTo(i*16+16,0);x.lineTo(i*16+32,0);x.lineTo(i*16+16,32);x.fill()}const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t})();const ch=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.28),new THREE.MeshBasicMaterial({map:cT}));ch.position.set(0,T2?1.2:.85,T2?2.57:3.46);CAR.add(ch);
@@ -172,12 +175,40 @@ SHOP.length=0;SHOP.push(
 {id:'w4',n:'🏭 Entreprise de 6',d:'Total 3 €/s',p:1500,req:'w3',f:()=>st.workers=6});
 let mis=st.mis||{g:12,p:0,r:15};const misUpd=()=>{st.mis=mis;$('mi').textContent='🎯 '+mis.p+'/'+mis.g+' objets → +'+mis.r+' €'};misUpd();
 const pops=[];function pop(x,z,c){const m=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),MB(c));m.position.set(x,.8,z);sc.add(m);pops.push({m,t:0})}
-function bikeBuild(A){const t=st.veh===1,RC=0xe53935;const wh=(x,z,r)=>{const w=new THREE.Mesh(new THREE.TorusGeometry(r,r*.12,8,20),M(0x1c1c1c));w.rotation.y=Math.PI/2;w.position.set(x,r+.04,z);return w};
- A(wh(0,-.7,.42),wh(0,.7,.42),box(.06,.06,1.2,RC,0,.85,0),box(.06,.55,.06,RC,0,.62,.35),box(.06,.75,.06,0xb71c1c,0,.65,-.68),box(.55,.05,.05,0x222222,0,1.02,-.68),box(.2,.06,.32,0x222222,0,.97,.42),box(.04,.04,.7,0x999999,0,.45,0));
- if(t){A(box(1,.1,1.4,0x6d7b8d,0,.45,1.9),box(.06,.35,1.4,0x8d9bad,-.5,.65,1.9),box(.06,.35,1.4,0x8d9bad,.5,.65,1.9),box(1,.35,.06,0x8d9bad,0,.65,2.6),box(1,.35,.06,0x8d9bad,0,.65,1.2),box(.05,.05,1,0x333333,0,.5,1.1),wh(-.58,1.9,.3),wh(.58,1.9,.3));const sg=signMesh();sg.scale.setScalar(.6);sg.position.set(0,1.15,2.63);A(sg)}else A(box(.55,.3,.45,0xc8913a,0,1.02,-.95));
+// roue de vélo : pneu, jante, rayons, moyeu
+function bWheel(x,z,r){const w=new THREE.Group(),t=new THREE.Mesh(new THREE.TorusGeometry(r,r*.085,10,32),M(0x161616)),rim=new THREE.Mesh(new THREE.TorusGeometry(r*.9,r*.03,6,32),MTL2(0xc9cdd2));w.add(t,rim);for(let i=0;i<16;i++){const a=i/16*Math.PI*2;w.add(tube([0,0,0],[0,Math.cos(a)*r*.88,Math.sin(a)*r*.88],.006,0xd0d4d8))}const hub=new THREE.Mesh(CYL2(.035,.035,.1,10),MTL2(0xbfc4c9));hub.rotation.z=Math.PI/2;w.add(hub);t.rotation.y=rim.rotation.y=Math.PI/2;w.position.set(x,r+.04,z);w.userData.spin=1;return w}
+function bikeBuild(A){const t=st.veh===1,RC=0xe53935,R2=0xb71c1c,BK=0x1e1e1e,r=.36,ay=r+.04,rear=[0,ay,.68],front=[0,ay,-.68],bb=[0,.36,.12],st0=[0,.92,.36],ht=[0,.92,-.5],hb=[0,.72,-.56];
+ A(bWheel(0,.68,r),bWheel(0,-.68,r));
+ A(tube(bb,st0,.024,RC),tube(st0,ht,.022,RC),tube(bb,hb,.026,RC),tube(ht,hb,.028,R2));// cadre en diamant
+ for(const x of[-.05,.05])A(tube([x,bb[1],bb[2]],[x,ay,.68],.012,RC),tube([x,st0[1]-.04,st0[2]],[x,ay,.68],.011,RC),tube([x,hb[1],hb[2]],[x,ay,-.68],.014,0x9aa0a6));// bases, haubans, fourche
+ A(tube(st0,[0,1.0,.42],.016,0x9aa0a6),tube(ht,[0,1.04,-.54],.018,0x9aa0a6),tube([-.3,1.04,-.56],[.3,1.04,-.56],.014,BK));// tige de selle, potence, guidon
+ for(const x of[-.3,.3])A(tube([x,1.04,-.56],[x*1.08,1.04,-.5],.02,0x2b2b2b));
+ const seat=new THREE.Mesh(new THREE.SphereGeometry(.12,12,8),M(BK));seat.scale.set(.75,.3,1.25);seat.position.set(0,1.03,.42);A(seat);
+ const cr=new THREE.Mesh(new THREE.TorusGeometry(.1,.012,6,20),MTL2(0xaaaaaa));cr.rotation.y=Math.PI/2;cr.position.set(.07,bb[1],bb[2]);A(cr);
+ A(tube([.07,bb[1]+.1,bb[2]],[.07,ay+.04,.68],.005,0x333333),tube([.07,bb[1]-.1,bb[2]],[.07,ay-.04,.68],.005,0x333333));// chaîne
+ for(const sd of[-1,1])A(tube([sd*.08,bb[1],bb[2]],[sd*.09,bb[1]-sd*.14,bb[2]+.03],.012,0x777777),box(.09,.02,.05,BK,sd*.12,bb[1]-sd*.14,bb[2]+.03));// manivelles, pédales
+ A(box(.1,.07,.04,0xfff3b0,0,.95,-.62),box(.07,.05,.03,0xff1744,0,.7,.82));
+ if(t){const TC=0x5c6b7a;A(box(.96,.06,1.3,TC,0,.42,1.85),box(.04,.32,1.3,0x7c8b9a,-.48,.6,1.85),box(.04,.32,1.3,0x7c8b9a,.48,.6,1.85),box(.96,.32,.04,0x7c8b9a,0,.6,2.5),box(.96,.32,.04,0x7c8b9a,0,.6,1.2),tube([0,.44,1.2],[0,ay+.02,.74],.016,0x333333),bWheel(-.56,1.85,.24),bWheel(.56,1.85,.24),lt(0xff1744,-.35,.55,2.53),lt(0xff1744,.35,.55,2.53));const sg=signMesh();sg.scale.setScalar(.55);sg.position.set(0,1.05,2.55);A(sg)}
+ else{const bk=new THREE.Group();bk.add(box(.5,.04,.38,0x8d6e3c,0,0,0),box(.5,.24,.03,0xc8913a,0,.12,-.18),box(.5,.24,.03,0xc8913a,0,.12,.18),box(.03,.24,.38,0xc8913a,-.25,.12,0),box(.03,.24,.38,0xc8913a,.25,.12,0));bk.position.set(0,.9,-.8);A(bk,tube([0,.9,-.62],[0,ay,-.68],.01,0x999999))}
  [[1,.5,.8,0xc8a165,-.3,.25,-.4],[.8,.35,.7,0x7b5aa6,.35,.18,.5],[.6,.5,.6,0xf5f5f5,0,.75,0],[.5,.3,.5,0x1976d2,-.3,.55,.4]].forEach(a=>loadG.add(box(...a)));
- if(t){loadG.position.set(0,.5,1.9);loadG.scale.set(.7,1,.9)}else{loadG.position.set(0,1.15,-.95);loadG.scale.set(.5,1,.5)}
+ if(t){loadG.position.set(0,.47,1.85);loadG.scale.set(.7,1,.9)}else{loadG.position.set(0,.93,-.8);loadG.scale.set(.42,.7,.42)}
  loadG.visible=false;CAR.add(loadG);sh(CAR)}
+// camionnette à benne : cabine galbée vitrée, calandre, phares, rétros, passages de roue, benne à nervures
+function vanBuild(A){const P0=0x1e88e5,cab=new THREE.Shape();cab.moveTo(-3.3,.5);cab.lineTo(-3.32,1.05);cab.quadraticCurveTo(-3.3,1.2,-3.0,1.22);cab.lineTo(-2.72,1.24);cab.lineTo(-1.5,1.24);cab.lineTo(-1.5,.5);cab.closePath();
+ const ex=(sh2,d)=>{const g=new THREE.ExtrudeGeometry(sh2,{depth:d,bevelEnabled:true,bevelThickness:.05,bevelSize:.05,bevelSegments:2,curveSegments:8});g.translate(0,0,-d/2);g.rotateY(-Math.PI/2);return g};
+ const body=new THREE.Mesh(ex(cab,1.9),M(P0));A(body);
+ // vitres et montants : pare-brise incliné, vitres latérales, lunette
+ A(tube([-.93,1.24,-2.72],[-.93,1.98,-2.42],.05,P0),tube([.93,1.24,-2.72],[.93,1.98,-2.42],.05,P0),tube([-.93,1.24,-1.52],[-.93,1.98,-1.52],.05,P0),tube([.93,1.24,-1.52],[.93,1.98,-1.52],.05,P0),box(2,.1,1.05,P0,0,2.02,-1.96),box(1.86,.04,.1,P0,0,2.0,-2.45));
+ {const ws=box(1.84,.78,.03,0x1b3a57,0,1.61,-2.57);ws.rotation.x=-.39;A(ws,box(.03,.7,.92,0x1b3a57,-.96,1.6,-2.0),box(.03,.7,.92,0x1b3a57,.96,1.6,-2.0),box(1.84,.7,.03,0x1b3a57,0,1.6,-1.5))}
+ A(box(2.1,.22,.22,0x2b2b2b,0,.62,-3.38),box(1.2,.3,.04,0x222222,0,.88,-3.36),lt(0xfff3b0,-.72,.95,-3.36),lt(0xfff3b0,.72,.95,-3.36),box(.12,.08,.05,0xff9100,-.95,.95,-3.34),box(.12,.08,.05,0xff9100,.95,.95,-3.34));
+ for(const sd of[-1,1])A(box(.06,.22,.16,0x222222,sd*1.08,1.55,-2.6),tube([sd*.98,1.5,-2.62],[sd*1.06,1.5,-2.6],.015,0x222222),box(.02,.02,.3,0x9aa0a6,sd*.97,1.05,-2.0));
+ A(box(1.95,.28,5.3,0x2e2e2e,0,.56,-.4));// châssis
+ // benne : plancher, parois à nervures, ridelle arrière, garde-boue
+ const BC=0x8d6e63,BD=0x6d4c41;A(box(2,.14,3.3,0x555555,0,.9,.85));for(const sd of[-1,1]){A(box(.08,.9,3.3,BC,sd*.97,1.38,.85));for(let z=-.6;z<=2.3;z+=.58)A(box(.1,.86,.08,BD,sd*1.01,1.38,z))}A(box(2,.9,.08,BC,0,1.38,2.48),box(2,.9,.08,BC,0,1.38,-.78),box(2,.08,.12,BD,0,1.85,2.48),box(2,.08,.12,BD,0,1.85,-.78));
+ A(lt(0xff1744,-.75,.75,2.53),lt(0xff1744,.75,.75,2.53),box(1.3,.22,.03,0xf2c400,0,.75,2.53));
+ A(wheel(-1.02,-2.45,.45),wheel(1.02,-2.45,.45),wheel(-1.02,1.45,.45),wheel(1.02,1.45,.45));
+ const b=new THREE.Mesh(new THREE.SphereGeometry(.16,10,8),MB(0xff9100));b.position.set(0,2.12,-1.96);A(b)}
+
 // virages : la route se courbe visuellement (shader), la logique reste droite
 const BU={value:0},BT={value:0};
 THREE.Material.prototype.onBeforeCompile=function(s){if(this.userData.nob)return;s.uniforms.uPz=BU;s.uniforms.uT=BT;s.vertexShader='uniform float uPz;uniform float uT;float bA(float z){return 30.0*sin(z*.012)+16.0*sin(z*.031+1.7);}float bD(float z){return .36*cos(z*.012)+.496*cos(z*.031+1.7);}\n'+s.vertexShader.replace('#include <project_vertex>',(this.userData.wind?'transformed.x+=sin(uT*2.0+modelMatrix[3].x*.3+modelMatrix[3].z*.3+transformed.x*.8)*transformed.y*'+(.18*this.userData.wind).toFixed(3)+';transformed.z+=cos(uT*1.7+modelMatrix[3].z*.3+transformed.x*.5)*transformed.y*'+(.1*this.userData.wind).toFixed(3)+';':'')+'vec4 mvPosition=vec4(transformed,1.0);vec4 wp=modelMatrix*mvPosition;wp.x+=bA(wp.z)-bA(uPz)-bD(uPz)*(wp.z-uPz);mvPosition=viewMatrix*wp;gl_Position=projectionMatrix*mvPosition;')};
@@ -819,7 +850,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.14";
+var APPV="2026-11-02.16";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
