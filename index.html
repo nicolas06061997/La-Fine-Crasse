@@ -239,8 +239,8 @@ function biomeSide(bm,s,z){const zz=z-3,slab=(c,w,x)=>put(box(w,.05,6,c,0,0,0),s
   else{if(k%2===1){const h=kget('sub/building-type-'+pk('abcdefghijklmnopqrstu'.split('')),rd(6.5,7.5));if(h){h.children[0].rotation.y=-Math.PI/2;h.userData.cols=[[0,0,8,9]];put(h,17,0,zz-3,1,0)}const d=kget('sub/driveway-long',6);if(d){d.children[0].rotation.y=-Math.PI/2;put(d,11,0,zz+1.5,1,0)}if(Math.random()<.6){const c=kcar(1);if(c){c.children[0].rotation.y=Math.PI/2;c.userData.cols=[[0,0,4.6,2.6]];put(c,11.5,0,zz+1.5,1,0)}}}else{const t=kget('sub/'+pk(['tree-large','tree-small']),rd(5,7));if(t){t.userData.tr=1;put(t,rd(12,20),0,zz,1)}}const f=kget('sub/fence-1x4',3.6);if(f){f.children[0].rotation.y=Math.PI/2;put(f,9.4,0,zz-1.5,1,0)}}}
  else if(bm===5){/* zone industrielle : grillage, entrepôts en tôle ondulée, conteneurs, cuves, cheminées qui fument, palettes */const k=((-z/6)|0);
   {const f=new THREE.Mesh(CHG,CHM);f.position.set(s*7.8,1,zz);f.rotation.y=Math.PI/2;sc.add(f);scen.push(f);f.frustumCulled=false;put(box(.08,2.1,.08,0x5d6670,0,0,0),s*7.8,1.05,zz-3,1,0);put(box(.05,.05,6,0x5d6670,0,0,0),s*7.8,2.05,zz,1,0)}
-  const off=s<0?0:2;if(k%4===off)put(warehouse(s),s*17.5,0,zz-9,1,0);
-  else if(k%4===(off+2)%4){const r=Math.random();if(r<.4)put(tanks(),s*rd(12,15),0,zz,1,0);else if(r<.75)put(contStack(),s*rd(10.5,14),0,zz,1,0);else put(chimney(),s*rd(13,17),0,zz,1,0)}
+  const off=s<0?0:4;/* un entrepôt tous les 48 m, conteneurs/cuves/cheminées dans l'espace libre entre deux (sans chevauchement) */if(k%8===off)put(warehouse(s),s*17.5,0,zz-9,1,0);
+  else if(k%8===(off+5)%8||k%8===(off+6)%8){const r=Math.random();if(r<.4)put(tanks(),s*rd(12,15),0,zz,1,0);else if(r<.75)put(contStack(),s*rd(10.5,14),0,zz,1,0);else put(chimney(),s*rd(13,17),0,zz,1,0)}
   if(Math.random()<.4)put(pallets(),s*rd(8.6,9.6),0,zz+rd(-2,2),1,rd(0,3));if(Math.random()<.06){const sh2=kget('car/tractor-shovel',1.8);if(sh2){sh2.userData.colr=1.6;put(sh2,s*rd(10,12),0,zz,1,rd(0,6.28))}}if(Math.random()<.2){const b=kget('car/box',2);if(b){b.userData.colr=.6;put(b,s*rd(8.5,9.8),0,zz+rd(-2,2),1,rd(0,3))}}}
  else{/* autoroute : talus d'herbe, glissière, murs antibruit, grands lampadaires, portiques et panneaux bleus, terre-plein central */const k=((-z/6)|0);put(tufts(s,[[.3,.42,.18],[.36,.46,.2]],60,9,17),0,0,zz,1,0);
   put(box(.1,.32,6,0xc9ced3,0,0,0),s*7.5,.62,zz,1,0);put(box(.12,.7,.12,0x8a9096,0,0,0),s*7.5,.35,zz-1.5,1,0);put(box(.12,.7,.12,0x8a9096,0,0,0),s*7.5,.35,zz+1.5,1,0);
@@ -446,7 +446,7 @@ function warehouse(s){const G=new THREE.Group(),D=rd(10,13),L=22,H=rd(7,9),c=pk(
  for(const zz of[-6,5])G.add(box(.1,4.2,4.6,0x50585f,fx,2.1,zz),box(.14,.25,5,0xf2c400,fx,4.35,zz));
  for(let zz=-9;zz<=9;zz+=2.2)G.add(box(.08,.7,1.6,0x9fc3d9,fx,H-1.4,zz));
  const sg=txtPlane(pk(['RECYCLAGE','LOGISTIQUE','MÉTAUX','TRI SÉLECTIF']),7,1.3,'#1b5e20','#ffffff',60);sg.rotation.y=s<0?Math.PI/2:-Math.PI/2;sg.position.set(-s*(D/2+.12),H-3,-.5);G.add(sg);
- G.add(box(2.2,1.1,10,0x8a8a84,fx-s*1.1,.55,0));if(typeof kget==='function'){const tk=kget('car/'+pk(['truck-flat','delivery-flat','truck','delivery']),1.8);if(tk){tk.children[0].rotation.y=s<0?Math.PI/2:-Math.PI/2;tk.position.set(fx-s*4.6,0,pk([-6,5]));G.add(tk)}}for(let zz=-4.5;zz<=4.5;zz+=3)G.add(cy(.12,.12,1.1,0xf2c400,fx-s*2.1,.55,zz));
+ G.add(box(2.2,1.1,10,0x8a8a84,fx-s*1.1,.55,0));for(let zz=-4.5;zz<=4.5;zz+=3)G.add(cy(.12,.12,1.1,0xf2c400,fx-s*2.1,.55,zz));
  G.userData.cols=[[-s*1.1,0,D+2.2,L]];return G}
 function contStack(){const G=new THREE.Group(),n=1+(Math.random()*3|0);for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.5,6),contM(pk([0xc62828,0x1565c0,0x2e7d32,0xef6c00,0x795548,0x00838f])));m.position.set(rd(-.15,.15),1.25+i*2.55,rd(-.3,.3));m.rotation.y=rd(-.05,.05);G.add(m)}G.userData.cols=[[0,0,2.6,6.2]];return G}
 function tanks(){const G=new THREE.Group();for(const zz of[-1.6,1.6]){const h=rd(5,8);G.add(cy(1.4,1.4,h,0xe8eaec,0,h/2,zz));const d=new THREE.Mesh(new THREE.SphereGeometry(1.4,16,8,0,Math.PI*2,0,Math.PI/2),M(0xd8dadc));d.position.set(0,h,zz);d.scale.y=.4;G.add(d,box(.06,h,.06,0x555555,1.42,h/2,zz),box(.3,.12,.3,0xf2c400,0,h+.6,zz))}G.add(box(.3,.3,3.2,0x777777,-1.5,1,0));G.userData.cols=[[0,0,3,6]];return G}
@@ -514,7 +514,7 @@ const KLIST=[...KCARS.map(c=>'car/'+c),'car/tractor',...'abcdefghijklmnopqrstu'.
  ...['tree_oak','tree_detailed','tree_default','tree_fat','tree_pineTallA_detailed','tree_pineTallB_detailed','tree_pineDefaultA','tree_tall','plant_bushLarge','plant_bushDetailed','mushroom_red','mushroom_redGroup','log_large','stump_old','rock_largeA','rock_largeB','rock_tallA','rock_tallB','rock_tallC','tree_palm','tree_palmBend','tree_palmTall','tree_palmDetailedTall','canoe','tent_detailedOpen','tree_pineRoundA','tree_pineTallC_detailed','tree_pineTallD_detailed','crops_cornStageD','crops_wheatStageB','flower_redA','flower_yellowA','flower_purpleA','crop_pumpkin'].map(c=>'nat/'+c),'car/cone','car/truck-flat','car/delivery-flat','car/tractor-shovel','car/box'];
 const KT=(n,a,b)=>kget('nat/'+pk(n),rd(a,b));
 const KLEAF=[0x3f8f3a,0x4f9a36,0x2f7a34,0x5a9e3a];
-if(HGL)for(const f of KLIST)HGL.load('models/kenney/'+f+'.glb',g=>{g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false;const n=o.material.name||'';if(/leaf/i.test(n)){o.material=o.material.clone();o.material.color.set(pk(KLEAF))}else if(/bark|wood/i.test(n)&&f.startsWith('nat/')){o.material=o.material.clone();o.material.color.set(0x6b4a30)}}});KEN[f]=g.scene},undefined,()=>{});
+if(HGL)for(const f of KLIST)HGL.load('models/kenney/'+f+'.glb',g=>{g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.frustumCulled=false;const n=o.material.name||'';if(/^grass$/i.test(n)){o.material=o.material.clone();o.material.color.set(0x4f8f34)}else if(/leafsFall/i.test(n)){}else if(/leaf/i.test(n)){o.material=o.material.clone();o.material.color.set(pk(KLEAF))}else if(/bark|wood/i.test(n)&&f.startsWith('nat/')){o.material=o.material.clone();o.material.color.set(0x6b4a30)}}});KEN[f]=g.scene},undefined,()=>{});
 function kget(f,sc2){const m=KEN[f];if(!m)return null;const c=m.clone();if(sc2)c.scale.setScalar(sc2);const G=new THREE.Group();G.add(c);return G}
 function kcar(park){const c=kget('car/'+pk(park?['sedan','suv','hatchback-sports','sedan-sports','suv-luxury','van']:KCARS),1.7);if(c)c.children[0].rotation.y=Math.PI;return c}
 
@@ -682,7 +682,7 @@ const COLS=[];function addCols(o){const u=o.userData,s=o.scale.x;if(u.cols)for(c
 function collide(p,pr){for(const c of COLS){if(Math.abs(c.z-p.z)>14)continue;if(c.b){const dx=p.x-c.x,dz=p.z-c.z,ox=c.hw+pr-Math.abs(dx),oz=c.hd+pr-Math.abs(dz);if(ox>0&&oz>0){if(ox<oz)p.x+=Math.sign(dx||1)*ox;else p.z+=Math.sign(dz||1)*oz}}else{const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz),m=c.r+pr;if(d<m&&d>1e-4){p.x+=dx/d*(m-d);p.z+=dz/d*(m-d)}}}}
 const items=[];let nextZ=-2;
 // un déchet ne doit jamais apparaître dans un bâtiment, une cuve ou un conteneur : on le ramène près du trottoir
-function freeSpots(z){for(const o of items){const p=o.m.position;if(p.z>z+16||p.z<z-24)continue;for(const c of COLS){if(!c.b)continue;if(Math.abs(p.x-c.x)<c.hw+.4&&Math.abs(p.z-c.z)<c.hd+.4){p.x=Math.sign(p.x||1)*rnd(7.3,7.9);if(o.bm)o.bm.position.x=p.x;break}}}}
+function freeSpots(z){for(const o of items){const p=o.m.position;if(p.z>z+16||p.z<z-24)continue;for(const c of COLS){if(!c.b)continue;if(Math.abs(p.x-c.x)<c.hw+.4&&Math.abs(p.z-c.z)<c.hd+.4){p.x=Math.sign(p.x||1)*rnd(6.4,6.9);/* sur le trottoir : jamais dans une clôture */if(o.bm)o.bm.position.x=p.x;break}}}}
 function spawn(){if(inDepot(nextZ)){scenery(nextZ);freeSpots(nextZ);nextZ-=6;return}const nc=cnts(Math.floor(-nextZ/300))[(-nextZ-2)/6]|0;for(let i=0;i<nc;i++){if(SKIP>0&&Math.floor(-nextZ/300)===st.map){SKIP--;continue}const rk=st.owned.includes('radar')?2:1,t=Math.random()<.02*rk?CHEST:Math.random()<.04*rk?BARREL:Math.random()<.04*rk?GOLD:Math.random()<.65?pick(T.slice(0,4)):pick(T.slice(4));const o=t();const side=Math.random()<.5?-1:1;
  o.m.position.x+=side*(inTown(nextZ)||biomeOf(nextZ)===5?rnd(7.4,9.5):rnd(7.5,15));o.m.position.z+=nextZ-rnd(0,6);o.m.rotation.y=rnd(0,6.28);sc.add(o.m);sh(o.m);o.mp=Math.floor(-nextZ/300);o.nm=tname(t);items.push(o)}if(Math.random()<.05)mkPw();const n0=items.length;scenery(nextZ);freeSpots(nextZ);nextZ-=6}
 for(let z=40;z>-2;z-=6)scenery(z);
@@ -917,7 +917,7 @@ requestAnimationFrame(loop);
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-02.21";
+var APPV="2026-11-03.1";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
