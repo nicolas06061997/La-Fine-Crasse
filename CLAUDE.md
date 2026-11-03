@@ -40,7 +40,3 @@ Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mis
 - `inDepot(z)` exclut aussi la zone de l'entrepôt : les compteurs `cnts` en dépendent.
 - Le classement (`DBr`, `UID`) ne marche que dans un artifact Claude ; ailleurs il est désactivé sans erreur.
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
-
-## Autre jeu : Route Nette (`route-nette/index.html`)
-Jeu 2D de gestion d'entreprise d'entretien des routes (petits boulots puis marchés publics du SPW). Fichier unique, canvas 2D, sans dépendance, sauvegarde `localStorage` clé `routenette1`. Indépendant de La Fine Crasse.
-En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/route-nette/
