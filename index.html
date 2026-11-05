@@ -70,7 +70,7 @@ button:disabled{filter:grayscale(.85);opacity:.55}
 <div class="mini"><button id="gb" title="Graphismes">⚙️</button><button id="mu" title="Son">🔊</button><button id="hb" title="Centrer">🏠</button></div>
 <div class="bar"><button class="rb b" data-t="trucks"><i>🚚</i><span>Camions</span></button><button class="rb g" data-t="zones"><i>🗺️</i><span>Quartiers</span></button><button class="rb p" data-t="build"><i>🏭</i><span>Dépôt</span></button><button class="rb" data-t="up"><i>⬆️</i><span>Améliorer</span></button><button class="rb" data-t="more" style="background:linear-gradient(#ff8a65,#e64a19);box-shadow:0 4px 0 #9a2d0f"><i>⭐</i><span>Plus</span></button></div>
 <div id="mis"></div>
-<div class="ebtns"><button onclick="entOpen('ent')">🏢 Entreprise</button><button onclick="entOpen('pv')" class="pvb">🏡 Vie privée</button><span id="edate"></span></div>
+<div class="ebtns" style="display:none"><button onclick="entOpen('ent')">🏢 Entreprise</button><button onclick="entOpen('pv')" class="pvb">🏡 Vie privée</button><span id="edate"></span></div>
 <div id="ent"><header id="ehead"></header><main id="epane"></main><nav id="etabs"></nav></div>
 <div id="shop"><div class="box"><button class="xb" id="shx">✕</button><h3 id="shT"></h3><div id="list"></div></div></div>
 <div id="toast"></div>
@@ -219,7 +219,7 @@ function planTrip(T){const cap=Math.round(R.capN()*crewM(T).c);let need=cap;cons
  T.targets=[];let cur={x:T.x,z:T.z};const first=cand[0];const pool=cand.slice(0,12).sort((a,b)=>Math.hypot(a.px-first.px,a.pz-first.pz)-Math.hypot(b.px-first.px,b.pz-first.pz));
  for(const h of pool){if(need<=0)break;const take=Math.min(need,Math.floor(h.trash-h.res));if(take<1)continue;h.res+=take;need-=take;T.targets.push({h,take})}
  if(!T.targets.length)return false;T.state='go';T.path=route({x:T.x,z:T.z},{x:T.targets[0].h.px,z:T.targets[0].h.pz});return true}
-function truckTick(T,dt){if(T.brk&&st.e&&T.brk>st.e.day)return;const v=R.spdN()*(EV.t>0&&EV.k==='spd'?1.5:1)*crewM(T).s;
+function truckTick(T,dt){if(ENT_ON&&T.brk&&st.e&&T.brk>st.e.day)return;const v=R.spdN()*(EV.t>0&&EV.k==='spd'?1.5:1)*crewM(T).s;
  if(T.state==='idle'){T.wait-=dt;if(T.wait<=0){if(!planTrip(T))T.wait=1.5}}
  else if(T.state==='collect'){T.wait-=dt;const tg=T.targets[0];if(T.wait<=0){const got=Math.min(tg.take,Math.floor(tg.h.trash));tg.h.trash-=got;tg.h.res=Math.max(0,tg.h.res-tg.take);T.load+=got;T.val+=got*ZONES[tg.h.zi].m;snd(300,.06,'square',.03);T.targets.shift();
    if(T.targets.length){T.state='go';T.path=route({x:T.x,z:T.z},{x:T.targets[0].h.px,z:T.targets[0].h.pz})}else{T.state='back';T.path=route({x:T.x,z:T.z},UNLOAD)}}}
@@ -389,7 +389,8 @@ const ownsHome=()=>PV().own.some(o=>PRIV[o.k]&&PRIV[o.k].c==='home');
 function pEv(t){const P=PV();P.ev.unshift([E().day,t]);if(P.ev.length>40)P.ev.length=40}
 // ---------- un jour du jeu ----------
 let eAcc=0;
-function entTick(dt){const e=st.e;if(!e)return;eAcc+=dt;if(eAcc<DAYS)return;eAcc=0;dayE()}
+/* version simple : l'entreprise et la vie privée sont mises de côté (code gardé, désactivé) */const ENT_ON=false;
+function entTick(dt){const e=st.e;if(!e||!ENT_ON)return;eAcc+=dt;if(eAcc<DAYS)return;eAcc=0;dayE()}
 /* mode facile (par défaut) : formalités automatiques, offres remises toutes seules, pas de procès ni contrôle fiscal, pas de démissions, réparations gratuites, impôts réduits */const EZ=()=>st.easy!==false;
 function dayE(){const e=E();e.day++;if(EZ()){e.bce=1;e.reg=1;if(st.trucks>=3)e.srl=1;e.ins.at=1}const d=gdate(e.day);if(e.m0===null){e.m0=st.money;e.e0=st.earned}
  // salaires payés jour par jour (comptés dans le mois)
@@ -561,7 +562,7 @@ loadKenney().then(()=>{forest();buildDepot();ensureZones();wildCells();for(let i
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-05.7";
+var APPV="2026-11-05.8";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});

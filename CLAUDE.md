@@ -29,7 +29,7 @@ Le jeu est un **tycoon de gestion** (pas de personnage dirigé). L'ancien jeu de
 - Le classement (`DBr`, `UID`) ne marche que dans un artifact Claude ; ailleurs il est désactivé sans erreur.
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
 
-## Entreprise et vie privée (comme Route Nette, version déchets — 2026-11-05.5)
+## Entreprise et vie privée (DÉSACTIVÉ depuis 2026-11-05.8 : `ENT_ON=false`, boutons `.ebtns` cachés ; code gardé)
 Ajout par-dessus le tycoon, sans changer le jeu de base. Tout est dans `st.e` (entreprise, via `E()`) et `st.pv` (vie privée, via `PV()`), gardés par le prestige (`keep`).
 - **Temps** : `DAYS` = 15 s réelles par jour du jeu (`entTick` dans `loop`, `dayE()`, fin de mois `monthE()`), date `dstr(e.day)` (départ 1/1/2027), affichée dans `#edate`.
 - **Pages** : `#ent` plein écran (`entOpen('ent'|'pv')`, `entClose`, `entR()` redessine, onglets `eTab` équipe/marchés/gestion/carrière et `pTab` vie/acheter/bourse/casino). Boutons `.ebtns` au-dessus de la mission.
