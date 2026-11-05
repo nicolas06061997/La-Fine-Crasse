@@ -15,28 +15,16 @@ L'utilisateur parle français et n'est pas développeur : réponses courtes, en 
 ## Lancer
 - `python3 -m http.server 8000` puis `http://localhost:8000/`. Pas de build. Three.js r128 vient des CDN (cdnjs, jsdelivr), gardé en cache par `sw.js` pour jouer hors ligne.
 
-## Structure du code (script principal, ordre important)
-1. **État et sauvegarde** : objet `st` (argent, véhicule `veh` 0-3, entrepôt `wh` 0-3, `map`…), sauvegardé dans `localStorage` clé `ramasseur2`.
-2. **Boutique** : tableau `SHOP` (réinitialisé par `SHOP.length=0;SHOP.push(...)`), rendu par `render()`.
-3. **Scène** : renderer, lumières, ciel (dôme), sols, route, joueur (`P`), véhicule (`CAR`, `buildCar()`).
-4. **Virages** : patch de shader (`THREE.Material.prototype.onBeforeCompile`, uniforms `BU`, `BT`). La logique reste en ligne droite sur l'axe -Z.
-5. **Zones** : 300 m chacune (`biomeOf(z)` : campagne, plage, montagne, autoroute, forêt, zone industrielle, ville ; noms `BNAME`, musique transposée `MTR`). `NM(m)=50+25*m` déchets. `buildBounds(m)`, `mapDoneUI()`, `goMap()`.
-6. **Décor** : `scenery(z)` appelé par `spawn()` tous les 6 m ; `tree()`, `palm()`, `grass()`, `tufts()`, `town()`, `depot()`, `wareBuild()`.
-7. **Déchets** : `T`, `GOLD`, `CHEST`, `BARREL`, bonus `mkPw()`.
-8. **Boucle** : `loop()` puis rendu `COMP` (post-traitement) ou `R.render`.
-9. **Qualité** : menu ⚙️ `gfxUI()` / `setGfx(k)` (`GFXP` : Auto, Très bas → 4K : résolution, ombres, post-traitement, nombre de piétons) ; `fpsMon()` adapte la résolution seulement en Auto.
-Un second `<script>` à la fin gère l'installation (bouton, bandeau) et les mises à jour (`version.json`, bouton « Vérifier les mises à jour » dans la boutique).
-10. **Personnages** : liste `CHARS` (Remy gratuit + 13 persos Mixamo dans `models/perso/`, prix croissants, achetés dans `st.chars` ; recoloration des habits réservée à Remy) (fichiers `models/*.glb` convertis depuis des FBX Mixamo : FBXLoader + GLTFExporter dans Chromium, textures réduites en JPEG, puis gltf-transform dedup/weld/quantize) + `models/anims.glb` (idle/run du X Bot, squelette seul) + `models/marche.glb` (marche « Strut Walking » Mixamo, sur place), adaptées par `retarget()` ; chargement `loadHero(i)`, taille réglée sur l'os de la tête. Boutique des personnages en 3D : `charShop()` (bouton 🧑, appui sur le personnage, bouton dans la boutique) ; options de Remy : `FOPT`, `buildFace()`, `faceUI()`. Précision des textures du sol/route/trottoir : `uvFix()` (sinon surfaces noires au loin sur certains téléphones). Vêtements repeints par `paintTop()`/`repaint2()`. À vélo : `pedal()` ; au volant : `seat()`.
-11. **Collisions** : `COLS` (boîtes `userData.cols` des groupes, troncs `userData.tr`, `userData.colr`), remplies par `put()`, résolues par `collide()` à pied seulement.
-12. **Parc à conteneurs** : `depot(z)` (quai, bennes `skip()`, clôture `gFence()`, bulles à verre).
-
-13. **Rejouabilité** : défis du jour + coffre (`dqDay`, `dqAdd`, `dqUI`, bouton 📋), codes cadeaux (`CODES`, `useCode`), tutoriel (`TUTO`, `st.tuto`), neige/orage/sons d'ambiance (`ambient`). Progression de zone sauvegardée : `st.got`, `st.mt`, `SKIP`.
-14. **Carte des zones** : `mapUI()` (bouton 🗺️), `travelTo(k)` (vide et reconstruit le monde), `st.maxMap`, `st.stars`, `st.gotz`. **Plage** : mer `SEAM`, sable mouillé, vagues `WAVES`, aileron `FIN` (`beachTick`). **Piétons** : clones SkeletonUtils du personnage (`pedTick`, 2 en qualité normale, 4 en max). Mémoire : `freeObj()` à chaque suppression de décor.
-
-15. **Modèles Kenney (CC0)** dans `models/kenney/{car,sub,com,nat}` : `KLIST` chargé au démarrage, `kget(chemin, échelle)` clone, `kcar(park)` voiture (face +Z, tournée de π). Utilisés : circulation (`mkCar`), voitures garées, zone Ville (`bm===6`), forêt, montagne, tracteur.
+## Structure du code (tycoon, depuis 2026-11-05)
+Le jeu est un **tycoon de gestion** (pas de personnage dirigé). L'ancien jeu de ramassage est dans l'historique git (commit c8c1d04).
+- **Sauvegarde** : objet `st` dans `localStorage` clé `lfc_tycoon` (argent, camions, niveaux, quartiers `zones`, `garage`, `sort`, `fact`, `tip`, `gfx`…).
+- **Économie** : `ZONES` (8 quartiers, prix, multiplicateur), `R` (prix du camion, capacité, vitesse, valeur, production), `UP` (améliorations), `BLD` (garage, centre de tri, usine), `cost()`.
+- **Carte** : grille de routes `RL` (tous les 20 m), quartiers de 40×40 m autour du dépôt central ; maisons Kenney (`KEN`, `kget`), poubelles avec sacs visibles (`HOUSES`).
+- **Camions** : `TRUCKS`, `planTrip` (choisit les maisons les plus pleines), `route` (chemin en L sur la grille), `truckTick` (go → collect → back → unload → park).
+- **Interface** : barre du bas (Camions, Quartiers, Dépôt, Améliorer) → `openPanel`/`render` ; caméra : glisser, pincer, toucher un quartier (`tap`) ; conseils `TIPS`, événements `EV`, gains hors ligne et cadeau du jour au démarrage.
+- Le second `<script>` (installation, mises à jour) est inchangé.
 
 ## Pièges connus
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
-- `inDepot(z)` exclut aussi la zone de l'entrepôt : les compteurs `cnts` en dépendent.
 - Le classement (`DBr`, `UID`) ne marche que dans un artifact Claude ; ailleurs il est désactivé sans erreur.
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
