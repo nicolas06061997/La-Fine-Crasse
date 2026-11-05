@@ -342,7 +342,7 @@ const ICS=[['Intradel','Liège'],['BEP Environnement','Namur'],['IPALLE','Wallon
 const TTYPE=[['Collecte des PMC (sacs bleus) en porte-à-porte','🔵'],['Collecte des papiers-cartons','📦'],['Collecte des déchets résiduels (conteneurs à puce)','🗑️'],['Collecte des déchets organiques','🍂'],['Vidange des bulles à verre','🍾'],['Collecte des encombrants sur rendez-vous','🛋️'],['Vidange des poubelles publiques','🚮'],['Nettoyage des dépôts clandestins','🚯']];
 const RIV=['Propreté Wallonne SA','Ardennes Collecte','EcoTri Hainaut','Mosane Environnement','Brabant Déchets Services','Condroz Recyclage'];
 function genTender(){const e=E(),ic=pk(ICS),ty=pk(TTYPE),big=e.srl?RI(1,Math.min(8,2+Math.floor(st.trucks/3))):RI(1,2);
- const perT=Math.max(9000,ipsMonth()/Math.max(1,st.trucks)*.3),v=Math.round(big*perT*rd(.9,1.15)/100)*100;
+ /* un marché doit rapporter plus que l'équipe (± 12 400 €/mois) : sinon impossible d'être rentable */const perT=Math.max(16500,ipsMonth()/Math.max(1,st.trucks)*.3),v=Math.round(big*perT*rd(.9,1.15)/100)*100;
  e.ten.push({id:e.nid++,ic:ic[0],reg:ic[1],t:ty[0],e:ty[1],k:big,v,mo:pk([6,12,12,24,36]),end:e.day+RI(6,12),st:'open',srl:big>=3})}
 function bidOk(t){const e=E();const r=[];r.push([!!e.bce,'Entreprise inscrite à la BCE']);r.push([!!e.reg,'Enregistrement de collecteur de déchets']);if(t.srl)r.push([!!e.srl,'Société (SRL) pour les gros lots']);r.push([crewed()>=t.k+usedK()+pendK(t),`${t.k} camion(s) avec équipe complète libre(s) (contrats et offres en cours comptés)`]);return r}
 const usedK=()=>E().con.reduce((a,c)=>a+c.k,0);
@@ -402,7 +402,7 @@ function dayE(){const e=E();e.day++;const d=gdate(e.day);if(e.m0===null){e.m0=st
  if(has2('offre'))for(const t of e.ten)if(t.st==='open'&&!t.my&&bidOk(t).every(x=>x[0])){t.my=1;t.price=t.v;elog(`📑 Ton responsable des offres a remis une offre à ${t.ic}.`)}
  e.ten=e.ten.filter(t=>t.st==='open'||e.day-t.end<20);
  // contrats en cours : il faut assez de camions avec équipe
- const need=usedK(),have=crewed();for(const c of e.con){if(have<need&&Math.random()<.08){c.pl++;const f=Math.round(c.v*.05);mvE(-f,'Pénalités des contrats');e.rep=clamp(e.rep-1,0,100);elog(`⚠️ Plainte de ${c.ic} : collecte pas faite (il manque des équipes). Pénalité ${eur(f)}.`)}}
+ const need=usedK(),have=crewed();for(const c of e.con){if(have<need&&Math.random()<.08){c.pl++;c.plm=1;const f=Math.round(c.v*.05);mvE(-f,'Pénalités des contrats');e.rep=clamp(e.rep-1,0,100);elog(`⚠️ Plainte de ${c.ic} : collecte pas faite (il manque des équipes). Pénalité ${eur(f)}.`)}}
  for(const c of e.con.slice())if(e.day>=c.end){e.con.splice(e.con.indexOf(c),1);e.done++;const g=c.pl?-2:3;e.rep=clamp(e.rep+g,0,100);xp(25);elog(`✅ Contrat terminé avec ${c.ic} (${c.t}). Réputation ${g>0?'+':''}${g}.`)}
  // pannes de camions
  const pP=(has2('meca')?.002:.006)*st.trucks;if(Math.random()<pP){const i=RI(0,st.trucks-1),T=TRUCKS[i];if(T){T.brk=e.day+(has2('meca')?1:3);const c=insOn('omn')?0:RI(15,60)*100;if(c)mvE(-c,'Réparations');elog(`🔧 Panne du camion n°${i+1} : immobilisé ${has2('meca')?'1 jour':'3 jours'}${c?', réparation '+eur(c):' (omnium)'}.`)}}
@@ -417,7 +417,7 @@ function dayE(){const e=E();e.day++;const d=gdate(e.day);if(e.m0===null){e.m0=st
  // fin du mois
  if(gdate(e.day+1).getDate()===1)monthE()}
 const isWd=d=>d.getDay()>0&&d.getDay()<6;
-function monthE(){const e=E(),P=PV(),d=gdate(e.day);
+function monthE(){const e=E(),P=PV(),d=gdate(e.day);/* contrat bien fait pendant le mois : réputation +1 */for(const c of e.con){if(!c.plm)e.rep=clamp(e.rep+1,0,100);c.plm=0}
  for(const c of e.con){mvE(c.v,'Contrats des intercommunales')}
  for(const [n,a] of fixedM())mvE(-a,n);
  if(e.loan){e.loan.left--;if(e.loan.left<=0){e.loan=null;elog('🏦 Crédit remboursé !')}}
@@ -560,7 +560,7 @@ loadKenney().then(()=>{forest();buildDepot();ensureZones();wildCells();for(let i
 <script>
 // Version du jeu : la seule à changer à chaque mise à jour, avec la même valeur dans version.json.
 // Le service worker est enregistré avec cette version (sw.js?v=…), ce qui force son remplacement et vide l'ancien cache.
-var APPV="2026-11-05.5";
+var APPV="2026-11-05.6";
 var SWR=null,BIP=null;
 var say=function(t){try{toast(t)}catch(x){}};
 if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js?v='+APPV).then(function(r){SWR=r}).catch(function(){})});
