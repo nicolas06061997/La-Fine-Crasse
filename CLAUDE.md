@@ -35,8 +35,8 @@ Jeu de pêche « idle » 3D en eau douce, indépendant de Dernier Rempart : http
 Fait d'après les goûts de l'utilisateur : nature/pêche, lacs et rivières, collectionner, devenir riche, beau matos, boss.
 - Tout est dans `peche/index.html` ; son propre `peche/sw.js` (caches `peche-…`), `peche/version.json`, `peche/manifest.webmanifest`, `peche/icons/`.
 - À chaque modification : changer `APPV` dans `peche/index.html` **et** `v` dans `peche/version.json` (même valeur, + `notes`).
-- Sauvegarde `localStorage` clé `pp2_save` : `m`, `lvs[lieu]` ({spd,val,cast} propres à chaque lieu), `fuel`, `eq` (rod,line,reel,bait,hook,boat), `spot`/`maxSpot`, `beaten`/`ever`, `caught`/`rec` (par poisson j = lieu*7+k), `bc`/`brec`/`bcd` (boss), `ach`, `cups`, `run`, `life`, `gold`, `t`.
-- Règles entre `RULES-START` et `RULES-END` : `SPOTS` (6 lieux, 7 poissons + 1 boss, thème, décor), `FISHV`, `PRICE`/`SPD` (prix des lieux lointains), `UPS` (4 cases du bas), `EQ` (matos, noms par niveau), `power`/`bossHP`/`tenUp` (combat), `cupGain` (Championnat).
+- Sauvegarde `localStorage` clé `pp2_save` (`sv:3` ; `migrate()` convertit les parties à 6 lieux) : `m`, `lvs[lieu]` ({spd,val,cast} propres à chaque lieu), `fuel`, `eq` (rod,line,reel,bait,hook,boat), `spot`/`maxSpot`, `beaten`/`ever`, `caught`/`rec` (par poisson j = lieu*7+k), `bc`/`brec`/`bcd` (boss), `ach`, `cups`, `run`, `life`, `gold`, `t`.
+- Règles entre `RULES-START` et `RULES-END` : `SPOTS` (10 lieux, 7 poissons + 1 boss, thème, décor), `FISHV`, `PRICE`/`SPD` (prix des lieux lointains), `UPS` (4 cases du bas), `EQ` (matos, noms par niveau), `power`/`bossHP`/`tenUp` (combat), `cupGain` (Championnat).
 - Combat de boss : `openBoss`, `startFight`, `updFight`, `endFight` (maintenir = mouliner, tension, fil qui casse). Battre le boss débloque le lieu suivant.
-- Décor par lieu : `buildDecor`, `applySpot` ; bateau/pêcheur : `buildBoat` (`BOATS`, 6 bateaux). Succès : `ACH`, `chkAch`.
-- Équilibre vérifié par simulation (achat glouton, en lisant le bloc RULES) : 1er boss ≈ 20 min, dernier ≈ 54 h de jeu actif.
+- Décor par lieu : `buildDecor`, `applySpot` ; bateau/pêcheur : `buildBoat` (`BOATS`, 8 bateaux). Succès : `ACH`, `chkAch`.
+- Équilibre vérifié par simulation (achat glouton, en lisant le bloc RULES) : `SPD=3` : 1er boss ≈ 20 min, 5e ≈ 4,5 h, dernier (10e) ≈ 200 h de jeu actif (le Championnat accélère).
