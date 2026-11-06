@@ -20,6 +20,7 @@ Les anciennes versions (jeu de ramassage c8c1d04, tycoon de collecte 9193ae9) so
 - **Vagues** : `W`, `startWave`, `spawnZ` (zombies légers faits de boîtes, types `ZT`, réutilisés via `ZPOOL`), boss toutes les 5 vagues (`BOSSES`, modèles Mixamo + `retarget`), `endWave`, `baseFall` (retour 3 vagues en arrière, jamais de vraie défaite).
 - **Combat** : tourelles `TUR` et héros `HER` visent le plus proche (`nearest`), `hit`/`killZ`, traçantes `tracer`, éclaboussures `splat`.
 - **Décor** : ville en ruines au crépuscule (`ruins`, `FIRES`), base (`buildWalls`, `buildTurrets`, `buildHeroes`, `buildGens`), cour avec sacs de sable, caisses, tentes.
+- **Contenu ajouté (06/11)** : types de tourelles `TT` (mg, canon, flame, tesla ; `st.tt[i]`), pouvoirs `PWD`/`PW`/`usePw`/`pwUI` (`st.pw` = niveaux), zombies `boomer` (explose, `blast`) et `armored` (`ar`), effets `boom`/`fx2`/`coins`/`bolt`/`flames`, caisses `DROP`/`spawnDrop`/`openDrop` (appui court + Raycaster), combos `COMBO`.
 - **Boucle** : `step(dt)` (logique, répétée ×1/×2/×3 selon `st.speed`), `loop` (effets + rendu). Panneaux `openPanel`/`render` (def, hero, base, up, more).
 - Test sans écran : servir three@0.128.0 via `page.route`, `serviceWorkers:'block'` ; simuler avec `step(.05)` en boucle (les boss se chargent de façon asynchrone : faire la simulation en plusieurs appels).
 
