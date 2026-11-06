@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Pêche Paradis",
+  "short_name": "Pêche Paradis",
+  "description": "Ton bateau pêche tout seul : améliore-le et attrape des poissons de plus en plus rares !",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#7fd6f0",
+  "theme_color": "#1aa3c9",
+  "categories": ["games"],
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

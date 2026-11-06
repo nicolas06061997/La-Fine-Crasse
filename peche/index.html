@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Pêche Paradis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1aa3c9">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pêche Paradis">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+:root{--gf:'Lilita One','Nunito',system-ui,sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;background:#7fd6f0;color:#123;font-family:'Nunito',system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+button{font-family:var(--gf);letter-spacing:.3px;border:0;cursor:pointer;color:inherit}
+#top{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:5}
+.money{background:#fff;border-radius:22px;padding:4px 20px 5px;text-align:center;box-shadow:0 5px 0 rgba(0,60,90,.25);border:3px solid #ffd54f}
+.money b{font-family:var(--gf);font-weight:400;font-size:32px;color:#2e7d32;line-height:1.1}
+.money small{display:block;font-weight:900;font-size:13px;color:#00838f;margin-top:-2px}
+#sea{margin-top:6px;font-weight:900;font-size:12px;color:#fff;background:rgba(0,60,90,.45);border-radius:999px;padding:3px 10px}
+#fz{margin-top:6px;display:none;font-family:var(--gf);font-size:16px;color:#fff;background:linear-gradient(#ff8a00,#e53935);border-radius:999px;padding:3px 12px;box-shadow:0 3px 0 #9a1c1c}
+.side{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);display:flex;flex-direction:column;gap:8px;z-index:6}
+.side button{width:46px;height:46px;border-radius:15px;background:#fff;font-size:23px;box-shadow:0 4px 0 rgba(0,60,90,.3);padding:0}
+.side button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,60,90,.3)}
+#sonar{position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 96px);z-index:5;display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+#sonar .sl{font-weight:900;font-size:11px;color:#fff;background:rgba(0,40,70,.55);border-radius:8px;padding:1px 6px}
+#sbar{position:relative;width:24px;height:30vh;border-radius:12px;background:linear-gradient(#7fe3f5,#1976d2 45%,#0b1d4d);border:3px solid #fff;box-shadow:0 3px 0 rgba(0,40,70,.3)}
+#sline{position:absolute;left:50%;top:0;width:2px;margin-left:-1px;background:rgba(255,255,255,.85)}
+#hook{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);font-size:18px;filter:drop-shadow(0 1px 1px #000)}
+.zd{position:absolute;left:-9px;width:8px;height:8px;margin-top:-4px;border-radius:50%;border:2px solid #fff}
+#bottom{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:8px 8px calc(env(safe-area-inset-bottom,0px) + 10px);background:linear-gradient(rgba(0,60,90,0),rgba(0,60,90,.45) 40%)}
+#buy{display:flex;justify-content:center;gap:6px;margin-bottom:7px}
+#buy button{font-size:14px;padding:4px 14px;border-radius:999px;background:rgba(255,255,255,.75);color:#00576b;box-shadow:0 3px 0 rgba(0,40,70,.25)}
+#buy button.on{background:#ffd54f;color:#5a3700}
+#cards{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;max-width:560px;margin:0 auto}
+.up{position:relative;background:#fff;border-radius:18px;padding:7px 3px 6px;text-align:center;box-shadow:0 5px 0 #90a4ae;border-top:5px solid var(--c);overflow:hidden;font-family:'Nunito',system-ui,sans-serif}
+.up:active{transform:translateY(3px);box-shadow:0 2px 0 #90a4ae}
+.up .ic{font-size:27px;line-height:1.1}
+.up .nm{font-family:var(--gf);font-size:14px;color:#263238;line-height:1.1}
+.up .lv{font-size:11px;font-weight:800;color:#78909c}
+.up .ef{font-size:11px;font-weight:900;color:#0277bd;min-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.up .pr{position:relative;margin-top:4px;border-radius:11px;background:#cfd8dc;color:#455a64;font-family:var(--gf);font-size:14px;padding:4px 2px;overflow:hidden}
+.up .pr i{position:absolute;left:0;top:0;bottom:0;width:0;background:#a5d6a7}
+.up .pr span{position:relative}
+.up.ok .pr{background:linear-gradient(#66bb6a,#2e7d32);color:#fff;box-shadow:0 2px 0 #1b5e20}
+.up.max .pr{background:#ffd54f;color:#5a3700}
+.up.no{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 120px);transform:translateX(-50%) scale(.9);z-index:30;background:#fff;color:#00576b;font-family:var(--gf);font-size:18px;padding:8px 18px;border-radius:16px;box-shadow:0 5px 0 rgba(0,40,70,.3);border:3px solid #ffd54f;opacity:0;transition:.25s;pointer-events:none;text-align:center;max-width:80vw}
+#toast.on{opacity:1;transform:translateX(-50%) scale(1)}
+.ft{position:fixed;z-index:4;pointer-events:none;font-family:var(--gf);font-size:20px;color:#fff;text-shadow:0 2px 0 #1b5e20,0 0 6px rgba(0,0,0,.4);transform:translate(-50%,-50%);animation:ft 1s ease-out forwards;white-space:nowrap}
+.ft.big{font-size:28px;color:#ffe066;text-shadow:0 3px 0 #a35f00,0 0 8px rgba(0,0,0,.4)}
+@keyframes ft{0%{opacity:0;margin-top:0}15%{opacity:1}100%{opacity:0;margin-top:-70px}}
+#gold{position:fixed;z-index:7;display:none;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:radial-gradient(rgba(255,240,150,.9),rgba(255,215,0,.35) 55%,rgba(255,215,0,0) 70%);font-size:30px;padding:0;animation:pulse .6s infinite alternate}
+@keyframes pulse{to{transform:scale(1.15)}}
+.pop{position:fixed;inset:0;z-index:40;background:rgba(0,30,50,.55);display:none;align-items:center;justify-content:center;padding:16px}
+.pop.on{display:flex}
+.pop>div{position:relative;background:#fff;border-radius:24px;padding:16px;max-width:420px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 8px 0 rgba(0,40,70,.35);border:4px solid #4fc3f7;touch-action:pan-y}
+.pop h2{margin:0 0 10px;font-family:var(--gf);font-weight:400;font-size:24px;color:#0277bd;text-align:center}
+.pop p{margin:8px 0;font-weight:700;color:#37474f;text-align:center}
+.x{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;background:#ef5350;color:#fff;font-size:18px;box-shadow:0 3px 0 #b71c1c}
+.big-b{display:block;width:100%;margin-top:10px;padding:12px;border-radius:16px;font-size:20px;background:linear-gradient(#66bb6a,#2e7d32);color:#fff;box-shadow:0 4px 0 #1b5e20;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.big-b:disabled{filter:grayscale(1);opacity:.5}
+.big-b.r{background:linear-gradient(#ef5350,#c62828);box-shadow:0 4px 0 #8e1b1b;font-size:16px}
+.big-b.b{background:linear-gradient(#4fc3f7,#0277bd);box-shadow:0 4px 0 #01579b;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fc{background:#e1f5fe;border-radius:14px;padding:8px 4px;text-align:center}
+.fc .e{width:46px;height:46px;margin:0 auto 4px;border-radius:50%;display:grid;place-items:center;font-size:26px;border:3px solid #fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.fc b{display:block;font-size:12px;font-weight:900;color:#01579b;line-height:1.1}
+.fc small{display:block;font-size:11px;font-weight:700;color:#546e7a}
+.fc.lock{background:#eceff1}.fc.lock .e{background:#90a4ae;color:#fff;font-family:var(--gf)}
+.sec{background:#e1f5fe;border-radius:16px;padding:10px;margin:10px 0}
+.sec h3{margin:0;font-family:var(--gf);font-weight:400;color:#01579b;font-size:19px}
+#upd{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:60;display:none;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:10px 12px;font-weight:900;color:#01579b;box-shadow:0 5px 0 rgba(0,40,70,.35);border:3px solid #ffd54f}
+#upd.on{display:flex}#upd>div{flex:1}#upd small{display:block;font-weight:700;color:#546e7a;font-size:13px}
+#upd button{padding:9px 12px;border-radius:12px;background:linear-gradient(#66bb6a,#2e7d32);color:#fff;font-size:15px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="top"><div class="money"><b id="money">0</b><small id="ips">+0 €/s</small></div><div id="sea"></div><div id="fz"></div></div>
+<div class="side"><button id="bAq" title="Mes poissons">🐠</button><button id="bMore" title="Plus">⭐</button></div>
+<div id="sonar"><div class="sl">0 m</div><div id="sbar"><div id="szones"></div><div id="sline"></div><div id="hook">🪝</div></div><div class="sl" id="smax">5 m</div></div>
+<button id="gold">✨</button>
+<div id="bottom"><div id="buy"><button data-b="1" class="on">×1</button><button data-b="10">×10</button><button data-b="max">MAX</button></div><div id="cards"></div></div>
+<div id="toast"></div>
+<div class="pop" id="pop"><div><button class="x" id="popX">✕</button><div id="popC"></div></div></div>
+<div id="upd"><div>🎣 Nouvelle mise à jour disponible<small id="updn"></small></div><button id="updB">Mettre à jour</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+// Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
+var APPV="2026-11-06.1";
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+// ================= Règles =================
+// Poissons : profondeur où on peut les attraper (m), valeur (€), couleur, taille, forme.
+const FISH=[
+ {n:'Sardine',e:'🐟',d:0,v:1,c:0x9fb8c9,s:.5},
+ {n:'Maquereau',e:'🐟',d:8,v:2.5,c:0x3f7fa8,s:.6},
+ {n:'Dorade',e:'🐠',d:16,v:6,c:0xf2c14e,s:.7},
+ {n:'Saumon',e:'🐟',d:30,v:14,c:0xff8a65,s:.8},
+ {n:'Poisson-clown',e:'🐠',d:55,v:32,c:0xff6d00,s:.6},
+ {n:'Thon',e:'🐟',d:95,v:75,c:0x2c4a7a,s:1},
+ {n:'Espadon',e:'🐟',d:160,v:170,c:0x5b6ee1,s:1.2},
+ {n:'Requin',e:'🦈',d:270,v:400,c:0x7d8a99,s:1.5},
+ {n:'Raie manta',e:'🐟',d:450,v:900,c:0x34495e,s:1.3,sh:'flat'},
+ {n:'Poulpe géant',e:'🐙',d:720,v:2100,c:0xe0533a,s:1.2,sh:'squid'},
+ {n:'Poisson-lanterne',e:'🐡',d:1150,v:5000,c:0x2b2b5a,s:.9},
+ {n:'Calamar colossal',e:'🦑',d:1900,v:12000,c:0xd35d9a,s:1.6,sh:'squid'},
+ {n:'Kraken',e:'🐙',d:3300,v:30000,c:0x7b1fa2,s:2.1,sh:'squid'},
+];
+const cycle=l=>2.5*Math.pow(.95,l);                      // secondes pour un poisson
+const mult=l=>(1+.25*l)*Math.pow(2,Math.floor(l/10));   // ×2 tous les 10 niveaux
+const depth=l=>Math.round(5*Math.pow(1.12,l));          // mètres
+const fuelH=l=>.5+.5*l;                                 // heures de pêche en ton absence
+const UPS=[
+ {k:'spd',ic:'⚡',n:'Vitesse',c:'#fbc02d',c0:5,g:1.45,max:42,f:l=>cycle(l).toFixed(2).replace('.',',')+' s'},
+ {k:'val',ic:'💰',n:'Argent',c:'#43a047',c0:8,g:1.3,max:1e9,f:l=>'×'+fmt(mult(l))},
+ {k:'dep',ic:'🎣',n:'Profondeur',c:'#1e88e5',c0:10,g:1.6,max:60,f:l=>fmt(depth(l))+' m'},
+ {k:'fuel',ic:'⛽',n:'Carburant',c:'#fb8c00',c0:30,g:1.65,max:23,f:l=>fmtH(fuelH(l))},
+];
+const cost=(u,l)=>Math.ceil(u.c0*Math.pow(u.g,l));
+const TIERS=[
+ {n:'Barque',min:0,s:1,hull:0x9c6430,stripe:0xd99a5b,deck:0xc08a52},
+ {n:'Bateau à moteur',min:15,s:1.12,hull:0xffffff,stripe:0xe53935,deck:0xd7ccc8,cab:0xffffff,roof:0x1e88e5},
+ {n:'Chalutier',min:45,s:1.25,hull:0x1565c0,stripe:0xffffff,deck:0xbcaaa4,cab:0xffffff,roof:0xe53935},
+ {n:'Yacht de pêche',min:95,s:1.4,hull:0xfafafa,stripe:0xffb300,deck:0x8d6e63,cab:0xfafafa,roof:0x263238},
+];
+const SEAS=[
+ {n:'Lagon Turquoise',top:0x2f9ef0,bot:0xc4ecff,water:0x1689b8,sun:0xfff4d6,si:1,amb:.6},
+ {n:'Mer du Couchant',top:0x4a3584,bot:0xffb27a,water:0x236f9e,sun:0xffb36b,si:.95,amb:.5},
+ {n:'Mer Arctique',top:0x6fa8de,bot:0xf0f7ff,water:0x3f7fa8,sun:0xffffff,si:.9,amb:.7,ice:1},
+ {n:'Océan des Étoiles',top:0x070c2b,bot:0x2c3f7a,water:0x154a80,sun:0xa8bbff,si:.6,amb:.45,stars:1},
+];
+
+// ================= Sauvegarde =================
+const KEY='pp_save';
+let st={m:0,lv:{spd:0,val:0,dep:0,fuel:0},caught:[],pearls:0,sea:0,run:0,life:0,t:Date.now(),snd:1,buy:'1'};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s){Object.assign(st,s);st.lv=Object.assign({spd:0,val:0,dep:0,fuel:0},s.lv||{})}}catch(e){}
+function save(){st.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+
+// ================= Formules =================
+function fmt(n){
+ if(!isFinite(n))return '∞';
+ if(n<1000)return (n<10&&n%1?(Math.round(n*10)/10).toString():Math.floor(n).toString()).replace('.',',');
+ const u=['K','M','Md','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];let i=-1;
+ while(n>=1000&&i<u.length-1){n/=1000;i++}
+ return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n).toString()).replace('.',',')+' '+u[i];
+}
+function fmtH(h){const m=Math.round(h*60);return m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60):'')}
+function topFish(){const d=depth(st.lv.dep);let i=0;while(i+1<FISH.length&&FISH[i+1].d<=d)i++;return i}
+function gainMult(){return mult(st.lv.val)*(1+.1*st.pearls)}
+function avgVal(){const t=topFish();let sw=0,sv=0;for(let i=0;i<=t;i++){const w=Math.pow(2,i);sw+=w;sv+=w*FISH[i].v}return sv/sw}
+function income(){return avgVal()*gainMult()/cycle(st.lv.spd)}
+function pickFish(){const t=topFish();let r=Math.random()*(Math.pow(2,t+1)-1);for(let i=t;i>=0;i--){r-=Math.pow(2,i);if(r<0)return i}return 0}
+function tierOf(){const s=st.lv.spd+st.lv.val+st.lv.dep;let t=0;TIERS.forEach((T,i)=>{if(s>=T.min)t=i});return t}
+function pearlGain(){return Math.floor(Math.sqrt(st.run/1e5))}
+
+// ================= Son =================
+let AC=null,lastPlop=0;
+function snd(f,d,type,vol,f2,delay){
+ if(!st.snd)return;
+ try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const t0=AC.currentTime+(delay||0);
+  const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
+  if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+d);g.gain.setValueAtTime(vol||.1,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);
+  o.connect(g);g.connect(AC.destination);o.start(t0);o.stop(t0+d+.02)}catch(e){}
+}
+addEventListener('pointerdown',()=>{try{if(AC&&AC.state==='suspended')AC.resume()}catch(e){}},{passive:true});
+
+// ================= Scène 3D =================
+const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+R.setPixelRatio(Math.min(devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(50,1,.1,1200);
+cam.position.set(1.2,4.2,11.5);cam.lookAt(0,1.1,0);
+const hemi=new THREE.HemisphereLight(0xffffff,0x2a6f80,.8);scene.add(hemi);
+const sunL=new THREE.DirectionalLight(0xffffff,1.2);sunL.position.set(30,50,25);scene.add(sunL);
+scene.fog=new THREE.Fog(0xc4ecff,60,260);
+
+const MC={};
+function mat(c,o){const k=c+'|'+(o?JSON.stringify(o):'');return MC[k]||(MC[k]=new THREE.MeshStandardMaterial(Object.assign({color:c,flatShading:true,roughness:.65},o||{})))}
+const GS=new THREE.SphereGeometry(1,10,8),GC=new THREE.ConeGeometry(1,1,4),GCy=new THREE.CylinderGeometry(1,1,1,7),GB=new THREE.BoxGeometry(1,1,1);
+function mesh(g,m,x,y,z,sx,sy,sz){const o=new THREE.Mesh(g,m);o.position.set(x||0,y||0,z||0);if(sx!==undefined)o.scale.set(sx,sy===undefined?sx:sy,sz===undefined?sx:sz);return o}
+
+// Ciel dégradé
+const skyU={top:{value:new THREE.Color()},bot:{value:new THREE.Color()}};
+const sky=new THREE.Mesh(new THREE.SphereGeometry(500,24,12),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:skyU,
+ vertexShader:'varying vec3 vp;void main(){vp=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:'uniform vec3 top;uniform vec3 bot;varying vec3 vp;void main(){float h=clamp(vp.y*2.2,0.,1.);gl_FragColor=vec4(mix(bot,top,pow(h,.7)),1.);}'}));
+scene.add(sky);
+const sunM=mesh(GS,new THREE.MeshBasicMaterial({color:0xfff6c0,fog:false}),120,140,-380,22);scene.add(sunM);
+// Étoiles (mer de nuit)
+const stars=(()=>{const n=500,p=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,e=rnd(.08,1.4);p[i*3]=Math.cos(a)*Math.cos(e)*450;p[i*3+1]=Math.sin(e)*450;p[i*3+2]=Math.sin(a)*Math.cos(e)*450}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));return new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:2,sizeAttenuation:false,fog:false}))})();
+scene.add(stars);
+
+// Mer animée
+function waveY(x,z,t){return .28*Math.sin(x*.22+t*1.1)+.2*Math.sin(z*.27+t*.85)+.1*Math.sin((x-z)*.45+t*1.7)}
+const seaG=new THREE.PlaneGeometry(420,420,110,110);seaG.rotateX(-Math.PI/2);
+const seaP=seaG.attributes.position;
+const seaMat=new THREE.MeshStandardMaterial({color:0x1d9fc4,flatShading:true,roughness:.35,metalness:.1});
+const sea=new THREE.Mesh(seaG,seaMat);scene.add(sea);
+function updSea(t){for(let i=0;i<seaP.count;i++){const x=seaP.getX(i),z=seaP.getZ(i),d=x*x+z*z;seaP.setY(i,d>22000?0:waveY(x,z,t))}seaP.needsUpdate=true}
+
+// Décor : îles, phare, montagnes, nuages, mouettes, icebergs
+function palm(x,z,h,rot){const g=new THREE.Group();g.position.set(x,0,z);
+ const tr=mesh(GCy,mat(0x8d6e63),0,h/2,0,.22,h,.22);tr.rotation.z=.12;g.add(tr);
+ for(let i=0;i<6;i++){const l=mesh(GB,mat(0x43a047),0,0,0,2.6,.08,.7);const p=new THREE.Group();p.position.set(h*.06,h,0);p.rotation.y=i*Math.PI/3+(rot||0);l.position.x=1.1;l.rotation.z=-.35;p.add(l);g.add(p)}
+ g.add(mesh(GS,mat(0x6d4c41),h*.06+.25,h-.25,.15,.22));g.add(mesh(GS,mat(0x6d4c41),h*.06-.1,h-.3,-.2,.22));return g}
+const deco=new THREE.Group();scene.add(deco);
+const sandM=mat(0xf3d99b);
+(()=>{const isl=new THREE.Group();isl.position.set(-16,0,-64);
+ isl.add(mesh(new THREE.CylinderGeometry(11,14,2.6,12),sandM,0,-.7,0));
+ isl.add(mesh(new THREE.CylinderGeometry(6,8.5,2,10),mat(0x66bb6a),-1.5,.8,-1));
+ isl.add(palm(3,2,6,.3));isl.add(palm(-2,-3,7.5,1));isl.add(palm(6,-3,5,2));isl.add(palm(-6,1,5.5,.8));
+ const hut=new THREE.Group();hut.position.set(1,1.8,-4);hut.add(mesh(GB,mat(0xbc8a5f),0,.9,0,3,1.8,2.4));const roof=mesh(GC,mat(0xe57373),0,2.5,0,2.6,1.6,2.6);roof.rotation.y=Math.PI/4;hut.add(roof);isl.add(hut);
+ deco.add(isl);
+ const l2=new THREE.Group();l2.position.set(17,0,-72);
+ for(let i=0;i<6;i++)l2.add(mesh(new THREE.DodecahedronGeometry(1,0),mat(0x8d9aa5),rnd(-4,4),rnd(-.5,.8),rnd(-3,3),rnd(1.5,3)));
+ const cols=[0xffffff,0xe53935];for(let i=0;i<5;i++){const r=1.5-i*.15;l2.add(mesh(new THREE.CylinderGeometry(r-.15,r,1.6,10),mat(cols[i%2]),0,1.6+i*1.6,0))}
+ l2.add(mesh(GCy,mat(0xfff59d,{emissive:0xffd54f,emissiveIntensity:.8}),0,10.2,0,.8,1.4,.8));
+ l2.add(mesh(new THREE.ConeGeometry(1.2,1.4,10),mat(0xe53935),0,11.6,0));deco.add(l2);
+ for(let i=0;i<9;i++){const h=rnd(10,24);const m=mesh(new THREE.ConeGeometry(1,1,6),mat(0x5f8f7a),rnd(-220,220),h/2-2,rnd(-280,-230),rnd(20,35),h,rnd(20,35));deco.add(m)}
+})();
+const ice=new THREE.Group();scene.add(ice);
+for(let i=0;i<8;i++){const a=rnd(-1.2,1.2),r=rnd(25,70);const m=mesh(new THREE.DodecahedronGeometry(1,0),mat(0xffffff,{roughness:.3}),Math.sin(a)*r,0,-Math.cos(a)*r-10,rnd(2,5),rnd(2,6),rnd(2,5));ice.add(m)}
+const clouds=[];
+for(let i=0;i<8;i++){const g=new THREE.Group();for(let j=0;j<4;j++)g.add(mesh(GS,mat(0xffffff,{roughness:1}),j*3-4.5,rnd(-.5,1),rnd(-1,1),rnd(2.5,4.2)));g.position.set(rnd(-150,150),rnd(26,46),rnd(-190,-80));scene.add(g);clouds.push(g)}
+const gulls=[];
+for(let i=0;i<3;i++){const g=new THREE.Group(),wm=mat(0xffffff);const w1=mesh(GB,wm,-.6,0,0,1.2,.06,.35),w2=mesh(GB,wm,.6,0,0,1.2,.06,.35);
+ const p1=new THREE.Group(),p2=new THREE.Group();p1.add(w1);p2.add(w2);g.add(p1,p2,mesh(GS,wm,0,0,0,.2,.18,.45));g.userData={p1,p2,a:i*2.1,r:rnd(9,14),h:rnd(8,11),sp:rnd(.25,.4)};scene.add(g);gulls.push(g)}
+
+function applySea(){const S=SEAS[st.sea%SEAS.length];
+ skyU.top.value.setHex(S.top);skyU.bot.value.setHex(S.bot);scene.fog.color.setHex(S.bot);
+ seaMat.color.setHex(S.water);sunL.color.setHex(S.sun);sunL.intensity=S.si;hemi.intensity=S.amb;hemi.color.setHex(S.stars?0x8899ff:0xffffff);
+ stars.visible=!!S.stars;ice.visible=!!S.ice;sunM.material.color.setHex(S.stars?0xeef0ff:(st.sea%4===1?0xffc27a:0xfff6c0));sunM.scale.setScalar(S.stars?14:22);
+ sandM.color.setHex(S.ice?0xf4f8ff:0xf3d99b);
+ document.body.style.background='#'+S.bot.toString(16).padStart(6,'0');
+ $('sea').textContent='🌊 '+S.n+(st.pearls?'  ·  🦪 '+st.pearls+' (+'+st.pearls*10+'%)':'');
+}
+
+// Bateau + pêcheur + canne
+let boat=null,rodPivot=null,rodTip=null,boatT=-1,bScale=1;
+function hullGeo(L,H,W,taper,bot){const g=new THREE.BoxGeometry(L,H,W,4,1,1),p=g.attributes.position;
+ for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),f=x/L+.5;let zs=1;if(f>.6)zs=1-(f-.6)/.4*(1-taper);if(y<0)zs*=bot;p.setZ(i,z*zs);if(y<0)p.setX(i,x*.88);if(f>.99&&y>0)p.setY(i,y+H*.3)}
+ g.computeVertexNormals();return g}
+function buildBoat(t){
+ if(boat)scene.remove(boat);boatT=t;const T=TIERS[t],s=T.s;bScale=s;
+ boat=new THREE.Group();const L=3*s,H=.8*s,W=1.4*s,dy=H*.75;
+ boat.add(mesh(hullGeo(L,H,W,.12,.6),mat(T.hull),0,H/2-.35*s,0));
+ boat.add(mesh(hullGeo(L*1.01,H*.2,W*1.03,.12,1),mat(T.stripe),0,H*.78-.35*s,0));
+ boat.add(mesh(GB,mat(T.deck),-L*.04,dy-.3*s,0,L*.84,.08,W*.86));
+ boat.userData.deckY=dy-.25*s;
+ if(T.cab){const cw=W*.72;boat.add(mesh(GB,mat(T.cab),-L*.22,dy-.3*s+H*.55,0,L*.3,H*1.1,cw));
+  boat.add(mesh(GB,mat(0x37474f,{roughness:.2,metalness:.5}),-L*.22+L*.151,dy-.3*s+H*.7,0,.05,H*.4,cw*.8));
+  boat.add(mesh(GB,mat(0x37474f,{roughness:.2,metalness:.5}),-L*.22,dy-.3*s+H*.7,cw/2+.01,L*.22,H*.35,.05));
+  boat.add(mesh(GB,mat(T.roof),-L*.22,dy-.3*s+H*1.15,0,L*.36,.12,cw*1.12));
+  boat.add(mesh(GB,mat(0x37474f),-L*.53,H*.4-.3*s,0,.3*s,.6*s,.4*s));}
+ if(t>=2){boat.add(mesh(GCy,mat(0xeeeeee),-L*.22,dy+H*2.2,0,.05,H*2.4,.05));const fl=mesh(GB,mat(0xe53935),-L*.22-.35*s,dy+H*3.1,0,.7*s,.4*s,.03);boat.add(fl);boat.userData.flag=fl;
+  boat.add(mesh(GB,mat(0xff7043),L*.32,dy-.1*s,-W*.25,.35*s,.3*s,.35*s));boat.add(mesh(GB,mat(0x42a5f5),L*.32,dy-.1*s,W*.05,.35*s,.3*s,.35*s))}
+ if(t>=3){boat.add(mesh(GB,mat(T.cab),-L*.26,dy-.3*s+H*1.55,0,L*.2,H*.7,W*.5));boat.add(mesh(GB,mat(0xffb300,{metalness:.6,roughness:.3}),-L*.26,dy-.3*s+H*1.95,0,L*.24,.08,W*.56));
+  boat.add(mesh(GS,mat(0xffffff),-L*.26,dy+H*2.1,0,.18))}
+ // Pêcheur (regarde vers +z, côté caméra)
+ const fm=new THREE.Group();fm.position.set(L*.18,boat.userData.deckY,W*.12);
+ fm.add(mesh(GCy,mat(0x1e88e5),0,.3,0,.24,.6,.24));
+ fm.add(mesh(GS,mat(0xffcc99),0,.82,0,.22));
+ fm.add(mesh(GS,mat(0x222222),-.08,.86,.19,.035));fm.add(mesh(GS,mat(0x222222),.08,.86,.19,.035));
+ fm.add(mesh(GS,mat(0xff8a65),0,.8,.21,.05));
+ fm.add(mesh(GCy,mat(0xffd54f),0,1.0,0,.34,.04,.34));fm.add(mesh(GCy,mat(0xffd54f),0,1.1,0,.18,.16,.18));
+ rodPivot=new THREE.Group();rodPivot.position.set(.18,.45,.12);
+ rodPivot.add(mesh(GCy,mat(0x5d4037),0,1.2,0,.03,2.4,.03));rodPivot.add(mesh(GCy,mat(0x263238),0,.25,.05,.07,.12,.07));
+ rodTip=new THREE.Object3D();rodTip.position.set(0,2.4,0);rodPivot.add(rodTip);fm.add(rodPivot);boat.add(fm);
+ boat.rotation.y=-.5;scene.add(boat);
+}
+
+// Ligne + bouchon
+const LN=14,lineG=new THREE.BufferGeometry();lineG.setAttribute('position',new THREE.BufferAttribute(new Float32Array(LN*3),3));
+const line=new THREE.Line(lineG,new THREE.LineBasicMaterial({color:0xffffff}));line.frustumCulled=false;scene.add(line);
+const bob=new THREE.Group();bob.add(mesh(GS,mat(0xe53935),0,0,0,.14));bob.add(mesh(GS,mat(0xffffff),0,.09,0,.1));scene.add(bob);
+
+// Poissons 3D (réutilisés)
+const FP={};
+function mkFish(i,gold){const F=FISH[i],s=F.s,g=new THREE.Group(),c=gold?0xffd54f:F.c,mo=gold?{emissive:0x9a7400,emissiveIntensity:.6,metalness:.5,roughness:.3}:null,m=mat(c,mo);
+ if(F.sh==='flat'){g.add(mesh(GS,m,0,0,0,1.1*s,.12*s,.75*s));const t=mesh(GCy,m,0,0,-1*s,.03*s,.9*s,.03*s);t.rotation.x=Math.PI/2;g.add(t)}
+ else if(F.sh==='squid'){g.add(mesh(GS,m,0,0,.2*s,.36*s,.36*s,.7*s));for(let k=0;k<6;k++){const a=k/6*Math.PI*2,t=mesh(GCy,m,Math.cos(a)*.18*s,Math.sin(a)*.18*s,-.75*s,.05*s,.9*s,.05*s);t.rotation.x=Math.PI/2;g.add(t)}}
+ else{g.add(mesh(GS,m,0,0,0,.27*s,.4*s,.75*s));const t=mesh(GC,m,0,0,-.88*s,.05*s,.45*s,.38*s);t.rotation.x=Math.PI/2;g.add(t);g.add(mesh(GC,m,0,.4*s,-.1*s,.03*s,.25*s,.2*s))}
+ const ew=mat(0xffffff),eb=mat(0x111111);[-1,1].forEach(sd=>{g.add(mesh(GS,ew,sd*.22*s,.1*s,.42*s,.09*s));g.add(mesh(GS,eb,sd*.27*s,.11*s,.47*s,.05*s))});
+ g.scale.setScalar(gold?Math.min(1.3,.85/s):Math.min(1,1.25/s));
+ return g}
+function getFish(i,gold){const k=i+(gold?'g':'');const p=FP[k]||(FP[k]=[]);const f=p.pop()||mkFish(i,gold);f.userData.k=k;f.visible=true;scene.add(f);return f}
+function relFish(f){f.visible=false;scene.remove(f);FP[f.userData.k].push(f)}
+
+// Éclaboussures
+const ringG=new THREE.RingGeometry(.25,.42,18);ringG.rotateX(-Math.PI/2);const rings=[];
+function splash(x,z,big){let r=rings.find(r=>!r.visible);if(!r){if(rings.length>14)return;r=new THREE.Mesh(ringG,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,side:THREE.DoubleSide}));scene.add(r);rings.push(r)}
+ r.visible=true;r.position.set(x,waveY(x,z,T)+.05,z);r.userData={t:0,b:big?2:1}}
+
+// Effets animés
+const fx=[];
+function anim(d,f,end){fx.push({t:0,d,f,end})}
+const V=new THREE.Vector3(),V2=new THREE.Vector3();
+function arcFly(f,a,b,h,dur,end){anim(dur,k=>{const p=x=>({x:lerp(a.x,b.x,x),y:lerp(a.y,b.y,x)+h*4*x*(1-x),z:lerp(a.z,b.z,x)});const p1=p(k),p2=p(Math.min(1,k+.03)+(k>=.97?.0001:0));
+ f.position.set(p1.x,p1.y,p1.z);if(k<.97)f.lookAt(p2.x,p2.y,p2.z)},()=>{relFish(f);end&&end()})}
+
+// Textes qui montent
+function toScreen(v){V2.copy(v).project(cam);return{x:(V2.x+1)/2*innerWidth,y:(1-V2.y)/2*innerHeight}}
+let ftN=0;
+function floatTxt(txt,v,big){if(ftN>8)return;const s=toScreen(v),d=document.createElement('div');d.className='ft'+(big?' big':'');d.textContent=txt;d.style.left=s.x+'px';d.style.top=s.y+'px';document.body.appendChild(d);ftN++;setTimeout(()=>{d.remove();ftN--},1000)}
+let toastT=0;function toast(t){const e=$('toast');e.innerHTML=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
+
+// ================= Pêche =================
+let T=0,phase=0,frenzy=0,flying=0;
+const castL=new THREE.Vector3(),nearL=new THREE.Vector3(),castW=new THREE.Vector3(),nearW=new THREE.Vector3(),tipW=new THREE.Vector3(),deckW=new THREE.Vector3();
+function catchFish(i,show){
+ const v=FISH[i].v*gainMult();st.m+=v;st.run+=v;st.life+=v;
+ const first=!st.caught[i];st.caught[i]=(st.caught[i]||0)+1;
+ if(first&&i>0){toast(FISH[i].e+' Nouveau poisson : <b>'+FISH[i].n+'</b> !');snd(523,.15,'triangle',.12);snd(784,.25,'triangle',.12,0,.12)}
+ if(show&&flying<7){flying++;const f=getFish(i);const a=nearW.clone();a.y=waveY(a.x,a.z,T);const b=deckW.clone();
+  splash(a.x,a.z,1);arcFly(f,a,b,1.6+FISH[i].s*.5,Math.min(.65,Math.max(.35,cycle(st.lv.spd)*.9)),()=>{flying--;floatTxt('+'+fmt(v)+' €',b)});
+  const n=performance.now();if(n-lastPlop>140){lastPlop=n;snd(420,.12,'sine',.07,880)}}
+}
+function rodAngle(a){if(rodPivot)rodPivot.rotation.x=a}
+function updFishing(dt){
+ const c=cycle(st.lv.spd),rate=frenzy>0?2:1,tot=phase+dt*rate/c,n=Math.floor(tot+.1)-Math.floor(phase+.1);phase=tot%1;
+ for(let j=0;j<Math.min(n,200);j++)catchFish(pickFish(),j<2);
+ // positions monde
+ boat.updateMatrixWorld(true);const s=bScale;
+ castL.set(.6*s,0,1.4*s/2+3.2);nearL.set(.5*s,0,1.4*s/2+.7);
+ castW.copy(castL).applyMatrix4(boat.matrixWorld);nearW.copy(nearL).applyMatrix4(boat.matrixWorld);
+ deckW.set(0,boat.userData.deckY+.4,0).applyMatrix4(boat.matrixWorld);
+ const wy=(v)=>waveY(v.x,v.z,T);
+ let p=phase,hook=0,bp=V,turbo=c*rate<.7 ? 1:0;
+ if(turbo){bp.copy(castW).lerp(nearW,.5);bp.y=wy(bp)-.05*Math.sin(T*30);rodAngle(1+.06*Math.sin(T*25));hook=.5+.5*Math.sin(T*8)}
+ else if(p<.15){const k=p/.15;rodAngle(lerp(.2,1.05,Math.min(1,k*1.5)));rodTip.getWorldPosition(tipW);bp.copy(tipW).lerp(castW,k);bp.y=lerp(tipW.y,wy(castW),k)+2*4*k*(1-k)}
+ else if(p<.5){rodAngle(.95);bp.copy(castW);bp.y=wy(castW);hook=(p-.15)/.35}
+ else if(p<.58){const k=(p-.5)/.08;rodAngle(1.12+.08*Math.sin(k*20));bp.copy(castW);bp.y=wy(castW)-.25*Math.sin(k*Math.PI);hook=1}
+ else if(p<.9){const k=(p-.58)/.32;rodAngle(.9+.05*Math.sin(T*30));bp.copy(castW).lerp(nearW,k);bp.y=wy(bp);hook=1-k}
+ else{const k=(p-.9)/.1;rodAngle(lerp(.9,.25,k));rodTip.getWorldPosition(tipW);bp.copy(nearW).lerp(tipW,k);bp.y=lerp(wy(nearW),tipW.y,k)}
+ bob.position.copy(bp);
+ rodTip.getWorldPosition(tipW);
+ const a=lineG.attributes.position.array,dist=tipW.distanceTo(bp),sag=Math.min(.8,dist*.08);
+ for(let i=0;i<LN;i++){const k=i/(LN-1);a[i*3]=lerp(tipW.x,bp.x,k);a[i*3+1]=lerp(tipW.y,bp.y,k)-sag*4*k*(1-k);a[i*3+2]=lerp(tipW.z,bp.z,k)}
+ lineG.attributes.position.needsUpdate=true;
+ const hp=(hook*100).toFixed(1)+'%';$('hook').style.top=hp;$('sline').style.height=hp;
+}
+
+// Poisson doré : touche-le pour un gros bonus + frénésie
+let gold=null,goldT=rnd(15,25);
+function spawnGold(){const i=Math.max(0,topFish()-Math.floor(Math.random()*2));const x=rnd(-3,3),z=rnd(-1,3);gold={i,x,z,t:0,life:6,f:getFish(i,true),dir:Math.random()<.5?1:-1};$('gold').style.display='block';snd(1200,.2,'sine',.06,1800)}
+function updGold(dt){
+ if(!gold){goldT-=dt;if(goldT<=0)spawnGold();return}
+ gold.t+=dt;const k=(gold.t%1.1)/1.1,f=gold.f;const x=gold.x+gold.dir*(k-.5)*2.4,y=waveY(gold.x,gold.z,T)-.3+2.2*4*k*(1-k);
+ const k2=Math.min(1,k+.03);f.position.set(x,y,gold.z);f.lookAt(gold.x+gold.dir*(k2-.5)*2.4,waveY(gold.x,gold.z,T)-.3+2.2*4*k2*(1-k2)+(k>.97?-1:0),gold.z);
+ if(k<.04&&gold.t>.1&&!gold.sp){gold.sp=1;splash(x,gold.z)}if(k>.5)gold.sp=0;
+ V.set(gold.x,waveY(gold.x,gold.z,T)+1.3,gold.z);const s=toScreen(V);const g=$('gold');g.style.left=s.x+'px';g.style.top=s.y+'px';
+ if(gold.t>gold.life)endGold();
+}
+function endGold(){if(!gold)return;relFish(gold.f);gold=null;goldT=rnd(25,45);$('gold').style.display='none'}
+$('gold').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(!gold)return;
+ const v=Math.max(30,income()*20);st.m+=v;st.run+=v;st.life+=v;frenzy=15;V.set(gold.x,1.5,gold.z);floatTxt('+'+fmt(v)+' €',V,true);
+ toast('✨ Poisson doré ! <b>+'+fmt(v)+' €</b><br>🔥 Frénésie : pêche ×2 pendant 15 s');[880,1108,1318,1760].forEach((f,i)=>snd(f,.18,'triangle',.1,0,i*.07));
+ splash(gold.x,gold.z,1);endGold();save()});
+
+// Poissons qui sautent au loin (décor)
+let jumpT=2;
+function updJumps(dt){jumpT-=dt;if(jumpT>0)return;jumpT=rnd(2.5,6);const i=Math.floor(Math.random()*(topFish()+1));const x=rnd(-14,14),z=rnd(-22,-4),d=rnd(1.5,3)*(Math.random()<.5?1:-1);
+ const f=getFish(i);const a={x,y:waveY(x,z,T)-.3,z},b={x:x+d,y:waveY(x+d,z,T)-.3,z};splash(x,z);arcFly(f,a,b,rnd(1.5,2.6),.9,()=>splash(b.x,b.z))}
+
+// ================= Interface =================
+let buyMode=st.buy||'1';
+function plan(u){const l=st.lv[u.k],lim=u.max-l;let n=0,c=0;const want=buyMode==='max'?1e4:+buyMode;
+ while(n<lim&&n<want){const k=cost(u,l+n);if(buyMode==='max'&&c+k>st.m)break;c+=k;n++}
+ if(n===0&&lim>0){n=1;c=cost(u,l)}return{n,c}}
+const cards=$('cards');
+UPS.forEach(u=>{const b=document.createElement('button');b.className='up';b.id='u-'+u.k;b.style.setProperty('--c',u.c);
+ b.innerHTML='<div class="ic">'+u.ic+'</div><div class="nm">'+u.n+'</div><div class="lv"></div><div class="ef"></div><div class="pr"><i></i><span></span></div>';
+ b.addEventListener('click',()=>buy(u,b));cards.appendChild(b);u.el=b;u.lv=b.querySelector('.lv');u.ef=b.querySelector('.ef');u.bar=b.querySelector('.pr i');u.pr=b.querySelector('.pr span')});
+function buy(u,b){const l=st.lv[u.k];if(l>=u.max)return;const p=plan(u);
+ if(st.m<p.c){b.classList.remove('no');void b.offsetWidth;b.classList.add('no');snd(160,.15,'square',.05);return}
+ const oldTop=topFish(),oldT=tierOf();st.m-=p.c;st.lv[u.k]+=p.n;snd(660,.08,'triangle',.1,990);
+ if(u.k==='val'&&Math.floor(st.lv.val/10)>Math.floor(l/10))toast('💰 Palier ! Tout l’argent <b>×2</b>');
+ if(u.k==='dep'&&topFish()>oldTop){const F=FISH[topFish()];toast('🎣 Plus profond ! Tu peux attraper : <b>'+F.e+' '+F.n+'</b>')}
+ const t=tierOf();if(t!==oldT){buildBoat(t);toast('🚤 Nouveau bateau : <b>'+TIERS[t].n+'</b> !');[523,659,784,1046].forEach((f,i)=>snd(f,.2,'triangle',.1,0,i*.08))}
+ renderUI();save()}
+document.querySelectorAll('#buy button').forEach(b=>b.addEventListener('click',()=>{buyMode=st.buy=b.dataset.b;document.querySelectorAll('#buy button').forEach(x=>x.classList.toggle('on',x===b));renderUI()}));
+document.querySelectorAll('#buy button').forEach(x=>x.classList.toggle('on',x.dataset.b===buyMode));
+let zKey='';
+function renderUI(){
+ $('money').textContent=fmt(st.m)+' €';$('ips').textContent='+'+fmt(income())+' €/s';
+ UPS.forEach(u=>{const l=st.lv[u.k],mx=l>=u.max;u.lv.textContent=mx?'Niveau MAX':'Niveau '+l;
+  if(mx){u.el.className='up max';u.ef.textContent=u.f(l);u.pr.textContent='MAX';u.bar.style.width='0';return}
+  const p=plan(u);u.ef.textContent=u.f(l)+' → '+u.f(l+p.n);u.pr.textContent=(p.n>1?'×'+p.n+' ':'')+fmt(p.c)+' €';
+  const ok=st.m>=p.c;u.el.className='up'+(ok?' ok':'');u.bar.style.width=ok?'0':Math.min(100,st.m/p.c*100)+'%'});
+ const d=depth(st.lv.dep);$('smax').textContent=fmt(d)+' m';
+ const t=topFish(),k=d+'|'+t;if(k!==zKey){zKey=k;let h='';for(let i=1;i<=t;i++)h+='<div class="zd" style="top:'+(FISH[i].d/d*100)+'%;background:#'+FISH[i].c.toString(16).padStart(6,'0')+'"></div>';$('szones').innerHTML=h}
+ const fz=$('fz');if(frenzy>0){fz.style.display='block';fz.textContent='🔥 Frénésie ×2 · '+Math.ceil(frenzy)+' s'}else fz.style.display='none';
+}
+
+// Fenêtres
+function pop(h){$('popC').innerHTML=h;$('pop').classList.add('on')}
+function closePop(){$('pop').classList.remove('on')}
+$('popX').onclick=closePop;$('pop').addEventListener('click',e=>{if(e.target.id==='pop')closePop()});
+const hex=c=>'#'+c.toString(16).padStart(6,'0');
+$('bAq').onclick=()=>{const d=depth(st.lv.dep);let n=0,h='<div class="grid">';
+ FISH.forEach((f,i)=>{const c=st.caught[i]||0;if(c){n++;h+='<div class="fc"><div class="e" style="background:'+hex(f.c)+'">'+f.e+'</div><b>'+f.n+'</b><small>'+fmt(f.v*gainMult())+' € · ×'+fmt(c)+'</small></div>'}
+  else h+='<div class="fc lock"><div class="e">?</div><b>???</b><small>'+(f.d<=d?'Bientôt…':'à '+fmt(f.d)+' m')+'</small></div>'});
+ pop('<h2>🐠 Mes poissons</h2><p>'+n+' / '+FISH.length+' espèces pêchées</p>'+h+'</div>')};
+$('bMore').onclick=openMore;
+function openMore(){const g=pearlGain(),nx=SEAS[(st.sea+1)%SEAS.length].n;
+ pop('<h2>⭐ Plus</h2>'+
+ '<div class="sec"><h3>🌊 Nouvelle mer</h3><p>Pars vers <b>'+nx+'</b> : tu recommences avec une barque, mais tu gagnes des <b>perles 🦪</b>. Chaque perle donne <b>+10 % d’argent pour toujours</b>. Tes poissons pêchés et ton carburant sont gardés.</p>'+
+ '<p>Tu gagnerais : <b>🦪 '+g+'</b>'+(g?'':'<br><small>Gagne '+fmt(1e5)+' € dans cette mer pour ta 1re perle (déjà '+fmt(st.run)+' €)</small>')+'</p>'+
+ '<button class="big-b" id="bPres" '+(g?'':'disabled')+'>🌊 Partir (+'+g+' 🦪)</button></div>'+
+ '<div class="sec"><h3>🏆 Statistiques</h3><p style="text-align:left">Bateau : <b>'+TIERS[tierOf()].n+'</b><br>Argent gagné en tout : <b>'+fmt(st.life)+' €</b><br>Poissons pêchés : <b>'+fmt(st.caught.reduce((a,b)=>a+(b||0),0))+'</b><br>Perles : <b>🦪 '+st.pearls+'</b> (+'+st.pearls*10+' %)</p></div>'+
+ '<button class="big-b b" id="bSnd">'+(st.snd?'🔊 Son : activé':'🔇 Son : coupé')+'</button>'+
+ '<button class="big-b b" id="bUpd">🔄 Vérifier les mises à jour</button>'+
+ '<button class="big-b r" id="bRst">🗑️ Recommencer à zéro</button><p><small>Version '+APPV+'</small></p>');
+ $('bPres').onclick=()=>{if(!pearlGain())return;if(!confirm('Partir vers '+nx+' ? Ton bateau et tes améliorations repartent à zéro.'))return;
+  st.pearls+=pearlGain();st.sea++;st.m=0;st.run=0;st.lv.spd=st.lv.val=st.lv.dep=0;applySea();buildBoat(tierOf());closePop();renderUI();save();toast('🌊 Bienvenue dans <b>'+SEAS[st.sea%SEAS.length].n+'</b> !')};
+ $('bSnd').onclick=()=>{st.snd=st.snd?0:1;save();openMore()};
+ $('bUpd').onclick=()=>chkUpd(true);
+ $('bRst').onclick=()=>{if(confirm('Effacer toute ta partie ?')){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}}}
+
+// Gains pendant l'absence
+function offline(sec){const lim=fuelH(st.lv.fuel)*3600,s=Math.min(sec,lim),g=income()*s;if(g<=0)return;
+ st.m+=g;st.run+=g;st.life+=g;
+ if(sec>=60){pop('<h2>👋 Bon retour !</h2><p>Ton bateau a pêché pendant <b>'+fmtH(s/3600)+'</b>'+(sec>lim?'<br><small>(il est tombé en panne d’essence après '+fmtH(lim/3600)+' : améliore le ⛽ Carburant !)</small>':'')+'</p><p style="font-family:var(--gf);font-size:30px;color:#2e7d32">+'+fmt(g)+' €</p><button class="big-b" id="bOk">💰 Récupérer</button>');
+  $('bOk').onclick=()=>{closePop();snd(660,.1,'triangle',.1,1320)}}save()}
+
+// Mises à jour
+let SWR=null;
+function chkUpd(man){fetch('version.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+ if(!j||!j.v||j.v===APPV){if(man)toast('Le jeu est à jour ✓');return}closePop();$('updn').textContent=j.notes||'';$('upd').classList.add('on')}).catch(()=>{if(man)toast('Pas de connexion')})}
+$('updB').onclick=()=>{try{SWR&&SWR.update()}catch(e){}setTimeout(()=>location.reload(),300)};
+if('serviceWorker' in navigator)addEventListener('load',()=>{navigator.serviceWorker.register('sw.js?v='+APPV).then(r=>{SWR=r}).catch(()=>{})});
+setInterval(()=>chkUpd(false),5*60e3);setTimeout(()=>chkUpd(false),4000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else chkUpd(false)});
+addEventListener('pagehide',save);
+
+// Taille de l'écran : le bateau reste visible au-dessus des cases du bas
+function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?56:42;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);
+
+// ================= Boucle =================
+applySea();buildBoat(tierOf());resize();renderUI();
+(()=>{const s=(Date.now()-(st.t||Date.now()))/1000;if(s>5)offline(s)})();
+let last=performance.now(),uiT=0,saveT=0;
+function step(dt){
+ T+=dt;if(frenzy>0)frenzy-=dt;
+ updSea(T);
+ const s=bScale;boat.position.y=waveY(0,0,T)-.05;boat.rotation.z=.06*Math.sin(T*1.1);boat.rotation.x=.04*Math.sin(T*.85+1);
+ if(boat.userData.flag)boat.userData.flag.rotation.y=.3*Math.sin(T*4);
+ updFishing(dt);updGold(dt);updJumps(dt);
+ for(let i=fx.length-1;i>=0;i--){const e=fx[i];e.t+=dt;const k=Math.min(1,e.t/e.d);e.f(k);if(k>=1){fx.splice(i,1);e.end&&e.end()}}
+ rings.forEach(r=>{if(!r.visible)return;const u=r.userData;u.t+=dt;const k=u.t/.7;r.scale.setScalar(1+k*2.5*u.b);r.material.opacity=.85*(1-k);if(k>=1)r.visible=false});
+ clouds.forEach(c=>{c.position.x+=dt*1.5;if(c.position.x>170)c.position.x=-170});
+ gulls.forEach(g=>{const u=g.userData;u.a+=dt*u.sp;g.position.set(Math.cos(u.a)*u.r,u.h+Math.sin(u.a*2),Math.sin(u.a)*u.r-6);g.rotation.y=-u.a;const fl=.5*Math.sin(T*6+u.a*5);u.p1.rotation.z=fl;u.p2.rotation.z=-fl});
+ uiT-=dt;if(uiT<=0){uiT=.2;renderUI()}
+ saveT-=dt;if(saveT<=0){saveT=3;save()}
+}
+function loop(now){
+ let dt=(now-last)/1000;last=now;
+ if(dt>2){offline(dt);dt=0}
+ step(Math.min(dt,.1));R.render(scene,cam);
+ requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body></html>

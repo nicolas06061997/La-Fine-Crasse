@@ -29,3 +29,11 @@ Les anciennes versions (jeu de ramassage c8c1d04, tycoon de collecte 9193ae9) so
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
 - Le classement (`DBr`, `UID`) ne marche que dans un artifact Claude ; ailleurs il est désactivé sans erreur.
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
+
+## Deuxième jeu : Pêche Paradis (dossier `peche/`)
+Jeu de pêche « idle » 3D, indépendant de Dernier Rempart : https://nicolas06061997.github.io/La-Fine-Crasse/peche/
+- Tout est dans `peche/index.html` ; son propre `peche/sw.js` (caches `peche-…`), `peche/version.json`, `peche/manifest.webmanifest`, `peche/icons/`.
+- À chaque modification : changer `APPV` dans `peche/index.html` **et** `v` dans `peche/version.json` (même valeur).
+- Sauvegarde `localStorage` clé `pp_save` (`m` argent, `lv` niveaux spd/val/dep/fuel, `caught`, `pearls`, `sea`, `run`, `life`, `t`).
+- Règles : `FISH` (profondeur, valeur), `UPS` (4 cases du bas : Vitesse, Argent, Profondeur, Carburant = durée de pêche hors-ligne), `TIERS` (bateaux), `SEAS` (thèmes, prestige « Nouvelle mer » avec perles +10 %).
+- Boucle : `step(dt)` / `loop`. Poisson doré `spawnGold` (bonus + frénésie ×2). Gains hors-ligne `offline(sec)`.
