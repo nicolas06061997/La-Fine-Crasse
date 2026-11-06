@@ -127,7 +127,7 @@ body.fighting #toast{top:calc(env(safe-area-inset-top,0px) + 160px)}
 <script>
 'use strict';
 // Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
-var APPV="2026-11-06.3";
+var APPV="2026-11-06.4";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
@@ -262,7 +262,7 @@ addEventListener('pointerdown',()=>{try{if(AC&&AC.state==='suspended')AC.resume(
 
 // ===================== Scène 3D =====================
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
-R.setPixelRatio(Math.min(devicePixelRatio||1,2));
+R.setPixelRatio(Math.min(devicePixelRatio||1,3));
 const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(56,1,.1,1200);
 const CAM0=new THREE.Vector3(1.2,4.2,11.5);cam.position.copy(CAM0);cam.lookAt(0,1.1,0);
