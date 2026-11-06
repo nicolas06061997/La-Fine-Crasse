@@ -26,6 +26,8 @@ Les anciennes versions (jeu de ramassage c8c1d04, tycoon de collecte 9193ae9) so
  à jour) est inchangé.
 
 ## Pièges connus
+- Couleurs : toujours passer par `M(hex)` ou `LIN(hex)` (conversion sRGB → linéaire), sinon tout paraît délavé.
+- Ruines/voitures Kenney : `soot(obj,teinte)` garde la texture et l'assombrit ; arbres : matériaux `TREEM` éclairés. Murs : `wallTex(niveau)` ; tourelles : `buildTurrets` (recul `t.rec`) ; zombies : détails `ZX`, flash blanc `HITM`/`unflash`.
 - Fonctions déclarées plusieurs fois (`tree`, `palm`, `mkCar`, `carParts`) : la dernière gagne.
 - Le classement (`DBr`, `UID`) ne marche que dans un artifact Claude ; ailleurs il est désactivé sans erreur.
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
