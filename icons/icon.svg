@@ -1,12 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4cc9f0"/><stop offset="1" stop-color="#6fd24f"/></linearGradient></defs>
-  <rect width="512" height="512" fill="url(#g)"/>
-  <g transform="translate(256 270)">
-    <path d="M-110 -90 h220 l-22 210 h-176 z" fill="#2e7d32" stroke="#1b5e20" stroke-width="10" stroke-linejoin="round"/>
-    <rect x="-130" y="-120" width="260" height="36" rx="14" fill="#388e3c" stroke="#1b5e20" stroke-width="10"/>
-    <rect x="-34" y="-150" width="68" height="34" rx="12" fill="none" stroke="#1b5e20" stroke-width="12"/>
-    <g fill="none" stroke="#ffd23f" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M-30 -20 l30 -40 l30 40"/><path d="M50 10 l-20 50 h-60"/><path d="M-50 10 l-20 50"/>
-    </g>
-  </g>
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1640"/><stop offset=".55" stop-color="#8a2f4a"/><stop offset="1" stop-color="#ff8a4c"/></linearGradient>
+<linearGradient id="st" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d8a84"/><stop offset="1" stop-color="#55524e"/></linearGradient>
+<linearGradient id="sk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7fae5a"/><stop offset="1" stop-color="#5a8a3e"/></linearGradient>
+</defs>
+<rect width="512" height="512" fill="url(#sky)"/>
+<circle cx="256" cy="300" r="120" fill="#ffb86b" opacity=".85"/>
+<g fill="#1d1430" opacity=".7"><rect x="20" y="210" width="60" height="120"/><rect x="90" y="170" width="45" height="160"/><rect x="380" y="190" width="55" height="140"/><rect x="440" y="230" width="60" height="100"/></g>
+<!-- main de zombie qui dépasse du rempart -->
+<g transform="translate(330 250) rotate(12)">
+<rect x="-34" y="0" width="68" height="110" rx="10" fill="url(#sk)" stroke="#2e4a1e" stroke-width="8"/>
+<rect x="-40" y="-60" width="80" height="70" rx="16" fill="url(#sk)" stroke="#2e4a1e" stroke-width="8"/>
+<g fill="url(#sk)" stroke="#2e4a1e" stroke-width="8"><rect x="-38" y="-120" width="18" height="70" rx="9"/><rect x="-16" y="-138" width="18" height="86" rx="9"/><rect x="6" y="-128" width="18" height="78" rx="9"/><rect x="28" y="-104" width="16" height="60" rx="8"/></g>
+<rect x="-34" y="40" width="68" height="16" fill="#5a3a2a"/><path d="M-34 56 l12 22 l10 -18 l12 20 l10 -20 l12 18 l12 -22z" fill="#5a3a2a"/>
+</g>
+<!-- rempart -->
+<g stroke="#2e2b28" stroke-width="8" stroke-linejoin="round">
+<path d="M0 330 h52 v-48 h56 v48 h52 v-48 h56 v48 h52 v-48 h56 v48 h52 v-48 h56 v48 h80 v182 h-512z" fill="url(#st)"/>
+</g>
+<g stroke="#3a3632" stroke-width="5" opacity=".7"><path d="M0 380 H512 M0 430 H512 M0 480 H512"/><path d="M60 330 V380 M170 330 V380 M290 330 V380 M410 330 V380 M110 380 V430 M230 380 V430 M350 380 V430 M470 380 V430 M50 430 V480 M180 430 V480 M300 430 V480 M420 430 V480"/></g>
+<path d="M226 512 v-90 a30 30 0 0 1 60 0 v90z" fill="#2a1a12" stroke="#2e2b28" stroke-width="8"/>
 </svg>
