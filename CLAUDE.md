@@ -31,9 +31,12 @@ Les anciennes versions (jeu de ramassage c8c1d04, tycoon de collecte 9193ae9) so
 - Ne jamais ajouter de code dans le script du jeu après `requestAnimationFrame(loop)`.
 
 ## Deuxième jeu : Pêche Paradis (dossier `peche/`)
-Jeu de pêche « idle » 3D, indépendant de Dernier Rempart : https://nicolas06061997.github.io/La-Fine-Crasse/peche/
+Jeu de pêche « idle » 3D en eau douce, indépendant de Dernier Rempart : https://nicolas06061997.github.io/La-Fine-Crasse/peche/
+Fait d'après les goûts de l'utilisateur : nature/pêche, lacs et rivières, collectionner, devenir riche, beau matos, boss.
 - Tout est dans `peche/index.html` ; son propre `peche/sw.js` (caches `peche-…`), `peche/version.json`, `peche/manifest.webmanifest`, `peche/icons/`.
-- À chaque modification : changer `APPV` dans `peche/index.html` **et** `v` dans `peche/version.json` (même valeur).
-- Sauvegarde `localStorage` clé `pp_save` (`m` argent, `lv` niveaux spd/val/dep/fuel, `caught`, `pearls`, `sea`, `run`, `life`, `t`).
-- Règles : `FISH` (profondeur, valeur), `UPS` (4 cases du bas : Vitesse, Argent, Profondeur, Carburant = durée de pêche hors-ligne), `TIERS` (bateaux), `SEAS` (thèmes, prestige « Nouvelle mer » avec perles +10 %).
-- Boucle : `step(dt)` / `loop`. Poisson doré `spawnGold` (bonus + frénésie ×2). Gains hors-ligne `offline(sec)`.
+- À chaque modification : changer `APPV` dans `peche/index.html` **et** `v` dans `peche/version.json` (même valeur, + `notes`).
+- Sauvegarde `localStorage` clé `pp2_save` : `m`, `lvs[lieu]` ({spd,val,cast} propres à chaque lieu), `fuel`, `eq` (rod,line,reel,bait,hook,boat), `spot`/`maxSpot`, `beaten`/`ever`, `caught`/`rec` (par poisson j = lieu*7+k), `bc`/`brec`/`bcd` (boss), `ach`, `cups`, `run`, `life`, `gold`, `t`.
+- Règles entre `RULES-START` et `RULES-END` : `SPOTS` (6 lieux, 7 poissons + 1 boss, thème, décor), `FISHV`, `PRICE`/`SPD` (prix des lieux lointains), `UPS` (4 cases du bas), `EQ` (matos, noms par niveau), `power`/`bossHP`/`tenUp` (combat), `cupGain` (Championnat).
+- Combat de boss : `openBoss`, `startFight`, `updFight`, `endFight` (maintenir = mouliner, tension, fil qui casse). Battre le boss débloque le lieu suivant.
+- Décor par lieu : `buildDecor`, `applySpot` ; bateau/pêcheur : `buildBoat` (`BOATS`, 6 bateaux). Succès : `ACH`, `chkAch`.
+- Équilibre vérifié par simulation (achat glouton, en lisant le bloc RULES) : 1er boss ≈ 20 min, dernier ≈ 54 h de jeu actif.
