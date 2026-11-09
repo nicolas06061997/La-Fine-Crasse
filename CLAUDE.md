@@ -45,3 +45,13 @@ Fait d'après les goûts de l'utilisateur : nature/pêche, lacs et rivières, co
 - Combat de boss : `openBoss`, `startFight`, `updFight`, `endFight` (maintenir = mouliner, tension, fil qui casse). Battre le boss débloque le lieu suivant.
 - Décor par lieu : `buildDecor`, `applySpot` ; bateau/pêcheur : `buildBoat` (`BOATS`, 8 bateaux). Succès : `ACH`, `chkAch`.
 - Équilibre vérifié par simulation (achat glouton, en lisant le bloc RULES) : `SPD=3` : 1er boss ≈ 20 min, 5e ≈ 4,5 h, dernier (10e) ≈ 200 h de jeu actif (le Championnat accélère).
+
+## Troisième jeu : Fantômes & Cie (dossier `fantomes/`)
+Jeu de gestion « idle » 3D : agence de chasseurs de maisons hantées. Indépendant des deux autres ; l'utilisateur le mettra plus tard dans son propre dépôt GitHub.
+- Tout est dans `fantomes/index.html` ; son propre `fantomes/sw.js` (caches `fc-…`), `version.json`, `manifest.webmanifest`, `icons/`.
+- À chaque modification : changer `APPV` dans `fantomes/index.html` **et** `v` dans `fantomes/version.json` (même valeur, + `notes`).
+- Sauvegarde `localStorage` clé `fc_save` (`sv:1`) : `m`, `ecto` (🧪), `spot`/`maxSpot`, `lvs[maison]` ({val,spd,spn,emf}), `hun` (chasseurs {nm,t=trait,s=étoiles,lv}), `cand` (candidats), `res` (labo), `caught` (j = maison*6+k), `bc` (boss), `ach`, `badges`/`fr` (Franchise), `run`, `life`, `gold`, `caps`.
+- Règles entre `RULES-START` et `RULES-END` : `PLACES` (10 maisons : forme `h`, ambiance, 6 fantômes, boss), `UPS` (Pièges, Aspirateur, Encens, Détecteur), `HIRE`/`TRAITS`/`hLvCost` (équipe), `RES` (labo), `bossHP`/`BH`.
+- 3D : `buildPlace` (maison faite de boîtes selon `h`), fantômes `mkGhost`/`POOL`/`spawnGhost`, chasseurs `mkHunter`/`placeHunters` (rayon `aimBeam`), `updGhosts`. Toucher un fantôme = capture ×2 ; fantôme doré = Pleine lune ×3.
+- Boss : `openBoss`, `startFight`, `updFight` (garder le viseur sur le boss), `endFight`.
+- Équilibre (simulation gloutonne en lisant le bloc RULES) : 1er boss ≈ 11 min, 5e ≈ 1 h 40, 10e ≈ 120 h.
