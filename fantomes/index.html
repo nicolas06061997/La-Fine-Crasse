@@ -117,6 +117,8 @@ button:focus-visible{outline:3px solid var(--gr)}
 .ft.bub{font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;color:#fff;background:rgba(25,12,50,.9);border:2px solid #fff;padding:6px 11px;border-radius:16px;text-shadow:none;animation:bub 2.6s ease-out forwards;white-space:normal;max-width:70vw}
 .ft.bub.boss{border-color:#ff1744;color:#ffb0b0;font-size:17px}
 @keyframes bub{0%{opacity:0;margin-top:10px}10%{opacity:1;margin-top:0}85%{opacity:1}100%{opacity:0;margin-top:-20px}}
+#inst{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 104px);z-index:35;display:none;align-items:center;gap:8px;background:linear-gradient(#69f08f,#1f9e48);color:#04260f;border-radius:999px;padding:6px 6px 6px 14px;box-shadow:0 4px 0 #0c5a25,0 0 18px rgba(118,255,154,.5);font-family:var(--gf);font-size:16px;white-space:nowrap}
+#inst.on{display:flex}#inst span{cursor:pointer}#inst button{background:rgba(0,0,0,.18);color:#04260f;border-radius:50%;width:28px;height:28px;font-size:14px;padding:0}
 @media (prefers-reduced-motion:reduce){.btn.go,#fear.hot,.tile.ev{animation:none}}
 </style></head><body>
 <canvas id="c"></canvas>
@@ -128,6 +130,7 @@ button:focus-visible{outline:3px solid var(--gr)}
 <div id="aimL"><div id="beam"></div><div id="cross"></div></div>
 <div id="warn"></div>
 <div id="panel"><div id="pc"></div></div>
+<div id="inst"><span id="instGo">📲 Installer le jeu</span><button id="instX" aria-label="Fermer">✕</button></div>
 <div id="toast"></div>
 <div class="pop" id="pop"><div><button class="x" id="popX">✕</button><div id="popC"></div></div></div>
 <div id="upd"><div>👻 Nouvelle mise à jour disponible<small id="updn"></small></div><button id="updB">Mettre à jour</button></div>
@@ -135,7 +138,7 @@ button:focus-visible{outline:3px solid var(--gr)}
 <script>
 'use strict';
 // Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
-var APPV="2026-11-09.9";
+var APPV="2026-11-09.10";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -828,8 +831,8 @@ function openMus(t){if(t!==undefined)musTab=t;const f=musTab;let s='<h2>🏛️ 
 $('bMus').onclick=()=>openMus();
 function openMore(){pop('<h2>⭐ Plus</h2><div class="sec"><h3>📊 Statistiques</h3><p style="text-align:left">Maisons vendues : <b>'+st.sold+'</b><br>Meilleur bénéfice : <b>'+fmt(st.best)+' €</b><br>Fantômes attrapés : <b>'+st.caps+'</b><br>Boss vaincus : <b>'+st.boss.reduce((a,b)=>a+(b||0),0)+'</b><br>Bonnes armes : <b>'+st.okw+'</b><br>Musée : <b>+'+fmt(st.mi)+' €/s</b></p></div>'+
  '<div class="sec"><h3>🏆 Succès ('+st.ach.length+'/'+ACH.length+') · revente +'+3*st.ach.length+' %</h3><p style="text-align:left;font-size:13px">'+ACH.map((a,i)=>st.ach.indexOf(i)>=0?a[0]+' <b>'+a[1]+'</b>':'<span style="opacity:.45">🔒 '+a[1]+'</span>').join('<br>')+'</p></div>'+
- '<button class="btn b" id="bSnd">'+(st.snd?'🔊 Son : activé':'🔇 Son : coupé')+'</button><button class="btn b" id="bMu">'+(st.music?'🎵 Musique : activée':'🎵 Musique : coupée')+'</button><button class="btn b" id="bHelp">❓ Comment jouer</button><button class="btn b" id="bUpd">🔄 Vérifier les mises à jour</button><button class="btn r" id="bRst">🗑️ Recommencer à zéro</button><p><small>Version '+APPV+'</small></p>');
- $('bSnd').onclick=()=>{st.snd=st.snd?0:1;save();openMore()};$('bMu').onclick=()=>{st.music=st.music?0:1;save();openMore()};$('bHelp').onclick=help;$('bUpd').onclick=()=>chkUpd(true);
+ '<button class="btn b" id="bSnd">'+(st.snd?'🔊 Son : activé':'🔇 Son : coupé')+'</button><button class="btn b" id="bMu">'+(st.music?'🎵 Musique : activée':'🎵 Musique : coupée')+'</button>'+(isApp()?'':'<button class="btn" id="bInst">📲 Installer le jeu sur mon téléphone</button>')+'<button class="btn b" id="bHelp">❓ Comment jouer</button><button class="btn b" id="bUpd">🔄 Vérifier les mises à jour</button><button class="btn r" id="bRst">🗑️ Recommencer à zéro</button><p><small>Version '+APPV+'</small></p>');
+ $('bSnd').onclick=()=>{st.snd=st.snd?0:1;save();openMore()};$('bMu').onclick=()=>{st.music=st.music?0:1;save();openMore()};$('bHelp').onclick=help;if($('bInst'))$('bInst').onclick=()=>{closePop();doInstall()};$('bUpd').onclick=()=>chkUpd(true);
  $('bRst').onclick=()=>askYes('Effacer toute ta partie ?',()=>{try{localStorage.removeItem(KEY)}catch(e){}window.__rst=1;location.reload()})}
 $('bMore').onclick=openMore;
 $('bTown').onclick=()=>{if(night){toast('Attends la fin de la nuit 🌙');return}if(curRoom>=0){if(gs&&gs.lock>0){warn('🔒 La porte est fermée !');return}leaveRoom()}goTown()};
@@ -890,15 +893,34 @@ function tap(x,y){if($('pop').classList.contains('on'))return;
  const h=st.h;if(!h)return;if(curRoom>=0){const ro=roomObjs[curRoom];if(ro&&ro.item&&rayAt(x,y,[ro.item.hit]))collectItem();return}const o=rayAt(x,y,roomObjs.map(r=>r.fl));if(!o)return;const i=o.userData.room;
  if(h.phase==='plan')placeDev(i);else if(h.phase==='hunt')enterRoom(i);else if(h.phase==='fix')openFix()}
 
+// ===================== Installer le jeu comme une appli =====================
+let DIP=null;
+const isApp=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: minimal-ui)').matches||navigator.standalone===true;
+function showInst(){if(isApp())return;let no=0;try{no=+sessionStorage.getItem('cmh_noinst')||0}catch(e){}if(!no)$('inst').classList.add('on')}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();DIP=e;showInst()});
+addEventListener('appinstalled',()=>{$('inst').classList.remove('on');DIP=null;toast('📲 Jeu installé ! Tu le trouveras sur ton écran d’accueil.')});
+function doInstall(){if(DIP){DIP.prompt();DIP.userChoice.then(c=>{if(c.outcome==='accepted')$('inst').classList.remove('on');DIP=null}).catch(()=>{});return}
+ const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(/Macintosh/.test(ua)&&'ontouchend' in document);
+ pop('<h2>📲 Installer le jeu</h2>'+(ios?'<p style="text-align:left">1. Appuie sur le bouton <b>Partager</b> ⬆️ en bas de Safari.<br>2. Choisis <b>« Sur l’écran d’accueil »</b>.<br>3. Appuie sur <b>Ajouter</b>.</p>':
+  '<p style="text-align:left">1. Ouvre le <b>menu</b> du navigateur (☰ ou ⋮).<br>2. Choisis <b>« Installer l’application »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.<br>3. Confirme.</p><p><small>Astuce : avec <b>Chrome</b> ou <b>Samsung Internet</b>, le bouton installe le jeu en un seul appui.</small></p>')+
+  '<p>Le jeu s’ouvrira en plein écran, comme tes autres applis, et se mettra à jour tout seul.</p><button class="btn" id="bOk">OK</button>');$('bOk').onclick=closePop}
+$('instGo').onclick=doInstall;$('instX').onclick=()=>{$('inst').classList.remove('on');try{sessionStorage.setItem('cmh_noinst','1')}catch(e){}};
+setTimeout(showInst,2500);
+
 // ===================== Hors ligne, mises à jour =====================
 function offline(sec){const lim=(2+2*st.eq.van)*3600,s=Math.min(sec,lim),g=st.mi*s;if(g<=0)return;earn(g);
  if(sec>=60){pop('<h2>👋 Bon retour !</h2><p>Ton musée a accueilli des visiteurs pendant ton absence.</p><p style="font-family:var(--gf);font-size:30px;color:#b9ffcb">+'+fmt(g)+' €</p>'+(sec>lim?'<p><small>(limité à '+(lim/3600)+' h : améliore la 🚐 camionnette)</small></p>':'')+'<button class="btn" id="bOk">💰 Merci !</button>');$('bOk').onclick=closePop}save()}
-let SWR=null;
+let SWR=null,UPD=null;
+// Mises à jour automatiques : dès qu'une nouvelle version existe, on sauvegarde et on recharge (pas pendant une chasse ni une nuit).
 function chkUpd(man){fetch('version.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
- if(!j||!j.v||j.v===APPV){if(man)toast('Le jeu est à jour ✓');return}closePop();$('updn').textContent=j.notes||'';$('upd').classList.add('on')}).catch(()=>{if(man)toast('Pas de connexion')})}
+ if(!j||!j.v||j.v===APPV){if(man)toast('Le jeu est à jour ✓');return}UPD=j;try{SWR&&SWR.update()}catch(e){}tryUpd()}).catch(()=>{if(man)toast('Pas de connexion')})}
+function tryUpd(){if(!UPD)return;let done='';try{done=sessionStorage.getItem('cmh_upd')||''}catch(e){}
+ if(done===UPD.v){$('updn').textContent=UPD.notes||'';$('upd').classList.add('on');return}   // déjà rechargé pour cette version : on laisse le bouton
+ if(night||curRoom>=0)return;
+ try{sessionStorage.setItem('cmh_upd',UPD.v)}catch(e){}save();toast('🔄 Mise à jour du jeu…<br><small>'+(UPD.notes||'')+'</small>');UPD=null;setTimeout(()=>location.reload(),1400)}
 $('updB').onclick=()=>{try{SWR&&SWR.update()}catch(e){}setTimeout(()=>location.reload(),300)};
 if('serviceWorker' in navigator)addEventListener('load',()=>{navigator.serviceWorker.register('sw.js?v='+APPV).then(r=>{SWR=r}).catch(()=>{})});
-setInterval(()=>chkUpd(false),5*60e3);setTimeout(()=>chkUpd(false),4000);
+setInterval(()=>chkUpd(false),3*60e3);setTimeout(()=>chkUpd(false),1500);setInterval(tryUpd,2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAim();save()}else chkUpd(false)});
 addEventListener('pagehide',save);
 function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?62:45;cam.updateProjectionMatrix();if(mode==='house'&&st.h){curRoom>=0?viewRoom(curRoom):viewHouse()}}
