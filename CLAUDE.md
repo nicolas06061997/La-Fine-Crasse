@@ -58,4 +58,6 @@ En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplac
 - Phases : `openBuy` → `placeDev`/`startNight`/`updNight`/`endNight` → `enterRoom`/`startScan`/`openCarnet`/`useWeapon`/`updRoom`/`captureGhost` (peur pleine → `flee`) → `openFix`/`repair`/`updFix` → `sell`.
 - Lieux : maisons de ville (pas de boss : vendre `SALES0`=3 maisons débloque la suite, compteur `s0`), fermes → Sorcière du Marais, écoles → Directeur de l'École, phares → Gardien du Phare, châteaux → Comte du Manoir, île maudite → Reine de l'Île Maudite.
 - Le boss d'un quartier est dans la maison « Maudite » ; le battre débloque le quartier suivant (`lmax`).
-- Fantômes et boss : exactement la liste de l'utilisateur (15 fantômes, 5 boss). Ne pas en inventer d'autres sans lui demander.
+- Fantômes : les 15 de l'utilisateur + 5 « Légendes du monde » ajoutées avec son accord (famille 5 : Yūrei, La Llorona, Jiangshi, Dullahan, Domovoï ; accessoires `hat`/`nohead`/`hop` dans `skinGhost`). Les 20 combinaisons de 3 indices sur 6 sont toutes prises : un nouveau fantôme devra partager une combinaison ou avoir un autre type d'indice. Boss : exactement les 5 de l'utilisateur.
+- Pièce vivante (`updRoom`) : objets qui sautent si le fantôme a 📦, lumière qui clignote si 💡 ; les voir ajoute l'indice au carnet.
+- Succès `ACH` (+3 % de revente chacun, vérifiés dans `step` toutes les 3 s) ; compteurs `okw` (bonnes armes), `nights`, `flees`.
