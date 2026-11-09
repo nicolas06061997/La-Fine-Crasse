@@ -138,7 +138,7 @@ button:focus-visible{outline:3px solid var(--gr)}
 <script>
 'use strict';
 // Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
-var APPV="2026-11-09.10";
+var APPV="2026-11-09.11";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -896,16 +896,30 @@ function tap(x,y){if($('pop').classList.contains('on'))return;
 // ===================== Installer le jeu comme une appli =====================
 let DIP=null;
 const isApp=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: minimal-ui)').matches||navigator.standalone===true;
-function showInst(){if(isApp())return;let no=0;try{no=+sessionStorage.getItem('cmh_noinst')||0}catch(e){}if(!no)$('inst').classList.add('on')}
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();DIP=e;showInst()});
-addEventListener('appinstalled',()=>{$('inst').classList.remove('on');DIP=null;toast('📲 Jeu installé ! Tu le trouveras sur ton écran d’accueil.')});
-function doInstall(){if(DIP){DIP.prompt();DIP.userChoice.then(c=>{if(c.outcome==='accepted')$('inst').classList.remove('on');DIP=null}).catch(()=>{});return}
- const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(/Macintosh/.test(ua)&&'ontouchend' in document);
- pop('<h2>📲 Installer le jeu</h2>'+(ios?'<p style="text-align:left">1. Appuie sur le bouton <b>Partager</b> ⬆️ en bas de Safari.<br>2. Choisis <b>« Sur l’écran d’accueil »</b>.<br>3. Appuie sur <b>Ajouter</b>.</p>':
-  '<p style="text-align:left">1. Ouvre le <b>menu</b> du navigateur (☰ ou ⋮).<br>2. Choisis <b>« Installer l’application »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.<br>3. Confirme.</p><p><small>Astuce : avec <b>Chrome</b> ou <b>Samsung Internet</b>, le bouton installe le jeu en un seul appui.</small></p>')+
-  '<p>Le jeu s’ouvrira en plein écran, comme tes autres applis, et se mettra à jour tout seul.</p><button class="btn" id="bOk">OK</button>');$('bOk').onclick=closePop}
+function browser(){const u=navigator.userAgent;if(/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&'ontouchend' in document))return 'ios';if(/SamsungBrowser/.test(u))return 'samsung';if(/HuaweiBrowser|HMSCore/.test(u))return 'huawei';if(/MiuiBrowser|XiaoMi/.test(u))return 'mi';if(/Firefox|FxiOS/.test(u))return 'firefox';if(/OPR\/|Opera/.test(u))return 'opera';if(/EdgA|Edg\//.test(u))return 'edge';if(/Chrome/.test(u))return 'chrome';return 'autre'}
+const BNAME={ios:'Safari',samsung:'Samsung Internet',huawei:'le navigateur Huawei',mi:'le navigateur Xiaomi',firefox:'Firefox',opera:'Opera',edge:'Edge',chrome:'Chrome',autre:'ton navigateur'};
+const BSTEPS={
+ ios:'1. Appuie sur <b>Partager</b> ⬆️ en bas de l’écran.<br>2. Choisis <b>« Sur l’écran d’accueil »</b>.<br>3. Appuie sur <b>Ajouter</b>.',
+ samsung:'1. Appuie sur l’icône <b>⬇️ Installer</b> dans la barre d’adresse (si elle est là).<br>2. Sinon : <b>☰ Menu</b> → <b>« Ajouter la page à »</b> → <b>« Écran d’accueil »</b>.',
+ firefox:'1. Appuie sur <b>⋮</b> (le menu).<br>2. Choisis <b>« Installer »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.',
+ opera:'1. Appuie sur <b>⋮</b>.<br>2. Choisis <b>« Ajouter à… »</b> → <b>« Écran d’accueil »</b>.',
+ edge:'1. Appuie sur <b>⋯</b> en bas.<br>2. Choisis <b>« Ajouter au téléphone »</b>.',
+ chrome:'1. Appuie sur <b>⋮</b> en haut à droite.<br>2. Choisis <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »).<br><small>Si tu ne le vois pas encore, joue une minute puis réessaie : Chrome le propose après un petit moment.</small>',
+ huawei:'1. Appuie sur <b>☰ Menu</b>.<br>2. Choisis <b>« Ajouter à l’écran d’accueil »</b>.',mi:'1. Appuie sur <b>☰ Menu</b>.<br>2. Choisis <b>« Ajouter à l’écran d’accueil »</b>.',
+ autre:'1. Ouvre le <b>menu</b> du navigateur (☰ ou ⋮).<br>2. Choisis <b>« Installer »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.'};
+function showInst(force){if(isApp())return;let no=0;try{no=+sessionStorage.getItem('cmh_noinst')||0}catch(e){}if(no&&!force)return;$('instGo').textContent=DIP?'📲 Installer le jeu (1 appui)':'📲 Installer le jeu';$('inst').classList.add('on')}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();DIP=e;showInst(true);if($('pop').classList.contains('on')&&$('bDip'))$('bDip').style.display='block'});
+addEventListener('appinstalled',()=>{$('inst').classList.remove('on');DIP=null;closePop();toast('📲 Jeu installé ! Il est sur ton écran d’accueil.')});
+function promptDip(){if(!DIP)return false;const d=DIP;d.prompt();d.userChoice.then(c=>{if(c.outcome==='accepted')$('inst').classList.remove('on')}).catch(()=>{});DIP=null;return true}
+function doInstall(){if(promptDip())return;const b=browser(),android=/Android/i.test(navigator.userAgent);
+ const toChrome=android&&b!=='chrome'?'<a class="btn" style="text-align:center;text-decoration:none;box-sizing:border-box" href="intent://'+location.host+location.pathname+'#Intent;scheme=https;package=com.android.chrome;end">🌐 Ouvrir le jeu dans Chrome</a><p><small>Dans Chrome, le bouton 📲 installe le jeu en un seul appui.</small></p>':'';
+ pop('<h2>📲 Installer le jeu</h2><p>Tu utilises <b>'+BNAME[b]+'</b>.'+(b==='chrome'?'':' Ce navigateur ne permet pas d’installer en un seul appui, voici comment faire :')+'</p>'+
+  '<div class="sec"><p style="text-align:left">'+BSTEPS[b]+'</p></div>'+toChrome+
+  '<button class="btn" id="bDip" style="display:none">📲 Installer maintenant</button>'+
+  '<p>Une fois installé, le jeu s’ouvre en plein écran depuis ton écran d’accueil, comme tes autres applis, et se met à jour tout seul.</p><button class="btn b" id="bOk">OK</button>');
+ $('bOk').onclick=closePop;$('bDip').onclick=()=>{closePop();promptDip()}}
 $('instGo').onclick=doInstall;$('instX').onclick=()=>{$('inst').classList.remove('on');try{sessionStorage.setItem('cmh_noinst','1')}catch(e){}};
-setTimeout(showInst,2500);
+setTimeout(()=>showInst(),2500);
 
 // ===================== Hors ligne, mises à jour =====================
 function offline(sec){const lim=(2+2*st.eq.van)*3600,s=Math.min(sec,lim),g=st.mi*s;if(g<=0)return;earn(g);
