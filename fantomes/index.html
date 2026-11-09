@@ -140,7 +140,7 @@ body.fighting #top,body.fighting .side,body.fighting #bottom{display:none}
 <script>
 'use strict';
 // Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
-var APPV="2026-11-09.2";
+var APPV="2026-11-09.3";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), pick=a=>a[Math.floor(Math.random()*a.length)];
 
@@ -564,6 +564,7 @@ let buyN='1',toastT=0;
 function toast(h){const t=$('toast');t.innerHTML=h;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
 function pop(h){$('popC').innerHTML=h;$('pop').classList.add('on')}
 function closePop(){$('pop').classList.remove('on')}
+function askYes(q,fn){pop('<h2>❓ Es-tu sûr ?</h2><p>'+q+'</p><button class="bb r" id="bYes">Oui</button><button class="bb b" id="bNo">Non</button>');$('bYes').onclick=()=>{closePop();fn()};$('bNo').onclick=closePop}
 $('popX').onclick=closePop;$('pop').addEventListener('pointerdown',e=>{if(e.target===$('pop'))closePop()});
 function flash(){const f=$('flash');f.style.opacity=.6;setTimeout(()=>f.style.opacity=0,90);setTimeout(()=>{f.style.opacity=.35;setTimeout(()=>f.style.opacity=0,70)},180)}
 document.querySelectorAll('#buy button').forEach(b=>b.onclick=()=>{buyN=b.dataset.b;document.querySelectorAll('#buy button').forEach(x=>x.classList.toggle('on',x===b));renderUI()});
@@ -664,13 +665,12 @@ function openMore(){const g=badgeGain(st.run),ok=st.maxSpot>=2;
  '<button class="bb b" id="bHelp">❓ Comment jouer</button>'+
  '<button class="bb b" id="bUpd">🔄 Vérifier les mises à jour</button>'+
  '<button class="bb r" id="bRst">🗑️ Recommencer à zéro</button><p><small>Version '+APPV+'</small></p>');
- $('bFr').onclick=()=>{const g=badgeGain(st.run);if(!g||!ok)return;if(!confirm('Ouvrir une franchise ? Ton argent, tes améliorations et tes lieux repartent à zéro.'))return;
-  st.badges+=g;st.fr++;st.m=0;st.run=0;st.lvs=[];st.spot=0;st.maxSpot=0;st.bc=[];st.hun.forEach(h=>h.lv=0);bossCd=0;
-  ghosts.slice().forEach(freeGhost);buildPlace();closePop();renderUI();save();toast('🏪 Nouvelle franchise ! <b>+'+g+' 🎖️</b>');jingle([523,659,784,1046])};
+ $('bFr').onclick=()=>{const g=badgeGain(st.run);if(!g||!ok)return;askYes('Ouvrir une franchise ? Ton argent, tes améliorations et tes lieux repartent à zéro.',()=>{  st.badges+=g;st.fr++;st.m=0;st.run=0;st.lvs=[];st.spot=0;st.maxSpot=0;st.bc=[];st.hun.forEach(h=>h.lv=0);bossCd=0;
+  ghosts.slice().forEach(freeGhost);buildPlace();closePop();renderUI();save();toast('🏪 Nouvelle franchise ! <b>+'+g+' 🎖️</b>');jingle([523,659,784,1046])})};
  $('bSnd').onclick=()=>{st.snd=st.snd?0:1;save();openMore()};
  $('bHelp').onclick=help;
  $('bUpd').onclick=()=>chkUpd(true);
- $('bRst').onclick=()=>{if(confirm('Effacer toute ta partie ?')){try{localStorage.removeItem(KEY)}catch(e){}window.__rst=1;location.reload()}}}
+ $('bRst').onclick=()=>askYes('Effacer toute ta partie ?',()=>{try{localStorage.removeItem(KEY)}catch(e){}window.__rst=1;location.reload()})}
 $('bMore').onclick=openMore;
 function help(){pop('<h2>❓ Comment jouer</h2><p style="text-align:left">👻 Les fantômes sortent des fenêtres. Tes <b>chasseurs</b> les aspirent tout seuls et tu gagnes de l’argent.<br><br>👆 <b>Touche un fantôme</b> pour l’attraper toi-même : ça rapporte <b>×2</b> !<br><br>📓 <b>Enquête</b> : ton équipe trouve des indices (💡 ❄️ 🎙️ 🟣 📦 📼). Ouvre le carnet et devine <b>qui hante la maison</b>. Bonne réponse = gros bonus. Mauvaise arme = le fantôme s’énerve !<br><br>🌕 Un <b>esprit de lune</b> passe parfois : touche-le vite pour la <b>Pleine lune</b> (×3 pendant 20 s).<br><br>🟡🌈💎 Les <b>variantes rares</b> valent beaucoup plus et remplissent ton <b>musée</b> 🏛️.<br><br>🪤 Pièges = plus d’argent · ⚡ Aspirateur = captures plus rapides · 🕯️ Encens = plus de fantômes · 📡 Détecteur = plus de rares.<br><br>👥 Recrute des chasseurs et choisis bien leur spécialité.<br><br>👑 Bats le <b>boss</b> du lieu pour débloquer le suivant.</p><button class="bb" id="bOk">C’est parti !</button>');$('bOk').onclick=closePop}
 
