@@ -131,7 +131,7 @@ button:focus-visible{outline:3px solid var(--gr)}
 <script>
 'use strict';
 // Version du jeu : à changer à chaque mise à jour, avec la même valeur dans version.json.
-var APPV="2026-11-09.5";
+var APPV="2026-11-09.6";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -166,7 +166,7 @@ const LIEUX=[
  {n:'Maisons de ville',d:'Quartier des Saules',ic:'🏘️',V:5000,sky:[0x3a2a7a,0xd08ab0],plat:0x5f8a4e,floor:0x8a6a4a,walls:[0xe6c8a0,0xb0c8e0,0xe8b0b0,0xc8e0a8],roof:0x7a3a3a,
   names:['rue des Saules','impasse du Hibou','allée des Lilas Fanés','rue du Vieux Cimetière','avenue des Courants d’Air'],
   rooms:[['Salon',['sofa','rug','lamp']],['Cuisine',['table','cabinet']],['Chambre',['bed','lamp']],['Salle de bain',['tub','cabinet']],['Bureau',['desk','shelf']],['Cave',['barrel','crate']],['Grenier',['crate','crate','painting']]],
-  pool:[0,1,2,3,4,9],boss:{n:'Le Locataire du Grenier',c:0x9aa86a,hat:'none',ab:'throw',d:'Il vit là depuis cent ans et te lance tous les meubles dessus.'}},
+  pool:[0,1,2,3,4,9],boss:null},   // quartier de départ : pas de boss, vendre SALES0 maisons débloque la suite
  {n:'Fermes abandonnées',d:'Campagne des Corneilles',ic:'🌾',V:35000,sky:[0x1f4a52,0xd0b080],plat:0x7a8a3e,floor:0x7a5a3a,walls:[0xb04a3a,0xd8c8a0,0x9a7a5a,0xc8b090],roof:0x4a3020,
   names:['Ferme des Corneilles','Ferme du Vieux Puits','Ferme Trou-Perdu','Ferme de la Citrouille','Moulin Grinçant'],
   rooms:[['Cuisine',['table','cabinet']],['Chambre',['bed','painting']],['Étable',['hay','crate']],['Poulailler',['hay','barrel']],['Atelier',['desk','crate']],['Cave à cidre',['barrel','barrel']],['Grange',['hay','hay','crate']]],
@@ -175,21 +175,22 @@ const LIEUX=[
   names:['École Saint-Grincement','Collège des Courants d’Air','Pensionnat Mille-Soupirs','École du Bonnet d’Âne','Lycée de la Craie Hurlante'],
   rooms:[['Classe',['desk','desk','shelf']],['Cantine',['table','bench']],['Bibliothèque',['shelf','shelf','desk']],['Gymnase',['crate','bench']],['Salle de musique',['cabinet','desk']],['Infirmerie',['bedH','cabinet']],['Bureau du directeur',['desk','shelf','painting']]],
   pool:[2,4,3,8,10,11],boss:{n:'Le Directeur de l’École',c:0xff9a3a,hat:'board',ab:'lock',d:'Il t’enferme dans une classe : impossible de sortir et ta peur grimpe.'}},
- {n:'Hôpitaux',d:'Faubourg des Brumes',ic:'🏥',V:1.8e6,sky:[0x1e3a5a,0x90c0b0],plat:0x5a7a6a,floor:0xa0a8a0,walls:[0xd8e8e0,0xc0d8e8,0xe0e0c8,0xb8d0c0],roof:0x4a5a5a,
-  names:['Hôpital des Brumes','Clinique du Docteur Frisson','Sanatorium du Mont Pâle','Hospice des Soupirs','Maternité des Berceuses'],
-  rooms:[['Accueil',['desk','sofa']],['Chambre 13',['bedH','lamp']],['Pharmacie',['shelf','cabinet']],['Radiologie',['desk','cabinet']],['Morgue',['bedH','bedH']],['Salle d’attente',['sofa','bench']],['Bloc opératoire',['bedH','lamp','cabinet']]],
-  pool:[0,5,6,7,9,14],boss:{n:'Le Chirurgien Fou',c:0x8affc8,hat:'cap',ab:'dark',d:'Il éteint toutes les lumières : tu n’y vois presque plus rien.'}},
+ {n:'Phares',d:'Côte des Naufrages',ic:'🗼',V:1.8e6,sky:[0x1e3a7a,0x8ab0e0],plat:0x6a7a5a,floor:0x8a7a6a,walls:[0xe8e0d0,0xb0c8e0,0xd8c8b0,0xc0d0d8],roof:0x34506e,
+  names:['Phare des Brumes','Phare de la Pointe Noire','Phare du Cap Hurlant','Phare des Mouettes','Phare Grinçant'],
+  rooms:[['Entrée',['bench','crate']],['Chambre du gardien',['bed','lamp']],['Cuisine',['table','cabinet']],['Réserve',['barrel','crate']],['Salle des cartes',['desk','shelf']],['Escalier',['crate','painting']],['Lanterne',['lamp','chest','lamp']]],
+  pool:[0,5,6,7,9,14],boss:{n:'Le Gardien du Phare',c:0x4fc3ff,hat:'cap',ab:'dark',d:'Il éteint toutes les lumières : tu n’y vois presque plus rien.'}},
  {n:'Châteaux',d:'Vallée de Noirval',ic:'🏰',V:1.3e7,sky:[0x3a2a7a,0xb07ac0],plat:0x4e6e44,floor:0x6a6070,walls:[0x9a94a8,0xa89880,0x8a8aa0,0xb0a090],roof:0x3e3060,
   names:['Château de Noirval','Manoir Croc-Lune','Forteresse des Pleurs','Donjon de Malpierre','Abbaye des Chuchotements'],
   rooms:[['Grand hall',['rug','painting','lamp']],['Cuisines',['table','barrel']],['Bibliothèque',['shelf','shelf']],['Chapelle',['bench','bench']],['Cachots',['barrel','crate']],['Armurerie',['shelf','chest']],['Salle du trône',['throne','rug','painting']]],
-  pool:[3,6,8,11,12,13],boss:{n:'Le Comte de Noirval',c:0xb07aff,hat:'crown',ab:'call',d:'Il commande les autres fantômes et se soigne en les appelant.'}},
+  pool:[3,6,8,11,12,13],boss:{n:'Le Comte du Manoir',c:0xb07aff,hat:'crown',ab:'call',d:'Il commande les autres fantômes et se soigne en les appelant.'}},
  {n:'Île maudite',d:'Île de Mortecôte',ic:'🏝️',V:1e8,sky:[0x3a1a6a,0xe07ab0],plat:0x8a8a5a,floor:0x7a6a4a,walls:[0x8a6a4a,0x6a8a8a,0x9a7a6a,0x7a7a9a],roof:0x2e1a4a,
-  names:['Temple de Mortecôte','Fort des Naufragés','Phare du Bout du Monde','Grotte du Capitaine Os','Village Englouti'],
-  rooms:[['Cabane',['bed','table']],['Ponton',['crate','barrel']],['Épave',['chest','barrel']],['Grotte',['chest','crate']],['Vieux phare',['shelf','lamp']],['Crique',['chest','plant']],['Temple maudit',['throne','chest','lamp']]],
+  names:['Temple de Mortecôte','Fort des Naufragés','Crique aux Squelettes','Grotte du Capitaine Os','Village Englouti'],
+  rooms:[['Cabane',['bed','table']],['Ponton',['crate','barrel']],['Épave',['chest','barrel']],['Grotte',['chest','crate']],['Tour de guet',['shelf','lamp']],['Crique',['chest','plant']],['Temple maudit',['throne','chest','lamp']]],
   pool:[6,7,10,13,14,12],boss:{n:'La Reine de l’Île Maudite',c:0xff4ad8,hat:'crown',ab:'all',d:'Le boss final : elle utilise tous les pouvoirs des autres boss.'}},
 ];
 const TIERS=[{n:'Un peu hantée',ic:'👻',pr:.5,g:1,cond:[.6,.85],c:'#81c784'},{n:'Très hantée',ic:'👻👻',pr:.3,g:2,cond:[.4,.7],c:'#ffb74d'},{n:'Maudite',ic:'💀',pr:.12,g:2,boss:1,cond:[.15,.5],c:'#ff5252'}];
-const ROOMS0=[3,4,4,5,5,6];                                  // pièces de base par lieu (+1 par niveau de hantise)
+const ROOMS0=[3,4,4,5,5,6];
+const SALES0=3;                                             // maisons de ville à vendre pour débloquer la ferme                                  // pièces de base par lieu (+1 par niveau de hantise)
 const ghostHP=(L,f)=>60*Math.pow(2.2,L)*(1+.25*f);
 const bossHP=L=>500*Math.pow(2.2,L);
 const power=()=>20*Math.pow(2.2,st.eq.asp)*(1+.1*st.tm.cost);
@@ -224,7 +225,7 @@ const NIGHT=22;                                             // durée de la nuit
 
 // ===================== Sauvegarde =====================
 const KEY='cmh_save';
-function fresh(){return {sv:1,m:3000,lmax:0,mk:[],h:null,eq:{lamp:0,mic:0,cam:0,th:0,asp:0,van:0},tm:{med:0,tec:0,bri:0,cost:0},mus:[],mi:0,boss:[],sold:0,caps:0,best:0,snd:1,t:Date.now()}}
+function fresh(){return {sv:1,m:3000,lmax:0,mk:[],h:null,eq:{lamp:0,mic:0,cam:0,th:0,asp:0,van:0},tm:{med:0,tec:0,bri:0,cost:0},mus:[],mi:0,boss:[],sold:0,s0:0,caps:0,best:0,snd:1,t:Date.now()}}
 let st;try{st=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!st||st.sv!==1)st=fresh();
 (()=>{const f=fresh();for(const k in f)if(st[k]===undefined)st[k]=f[k];for(const k in f.eq)if(st.eq[k]===undefined)st.eq[k]=0;for(const k in f.tm)if(st.tm[k]===undefined)st.tm[k]=0})();
@@ -328,13 +329,14 @@ function skinBoss(o,B){const u=o.userData,m=gmat(0x1a0c22,.94,.05);m.emissive=LI
  const h=u.hat;while(h.children.length)h.remove(h.children[0]);const gold=MS(0xffd54f,80);
  if(B.hat==='crown'){cyl(.32,.36,.22,gold,0,.68,0,h,12);for(let i=0;i<6;i++){const a=i/6*Math.PI*2;cone(.07,.24,gold,Math.cos(a)*.33,.88,Math.sin(a)*.33,h,6);sph(.04,G(i%2?0xff1744:0x40c4ff),Math.cos(a)*.35,.68,Math.sin(a)*.35,h,6,4)}}
  else if(B.hat==='witch'){cyl(.75,.75,.04,MS(0x2a1a3a),0,.6,0,h,20);const c=cone(.42,1.2,MS(0x3a1a4a),0,1.2,-.05,h,16);c.rotation.x=-.3;cyl(.43,.43,.1,G(0x5aff3a),0,.68,0,h,16)}
- else if(B.hat==='cap'){const c=sph(.42,MS(0x4a9a7a),0,.5,0,h,16,8);c.scale.y=.6;box(.5,.25,.04,MS(0x6ac0a0),0,-.1,.58,h)}
+ else if(B.hat==='cap'){cyl(.4,.44,.28,MS(0x1a2a5a),0,.7,0,h,16);box(.5,.04,.3,MS(0x111111),0,.58,.4,h);cyl(.45,.45,.06,gold,0,.6,0,h,16);sph(.06,gold,0,.72,.42,h,8,6)}
  else if(B.hat==='board'){cyl(.35,.38,.2,MS(0x222222),0,.66,0,h,12);box(1,.06,1,MS(0x222222),0,.79,0,h).rotation.y=.785;sph(.06,gold,.45,.4,0,h,6,4)}}
 const GO=mkGhost();      // le fantôme de la pièce où tu es
 const SHADE=mkGhost();   // silhouette vue par les caméras la nuit
 const MINI=[mkGhost(),mkGhost(),mkGhost()];
 
 // ===================== La ville (carte) =====================
+const lockTxt=L=>L===1?'🔒 Vends '+SALES0+' maisons de ville ('+Math.min(st.s0,SALES0)+'/'+SALES0+')':'🔒 Bats '+LIEUX[L-1].boss.n;
 const town=new THREE.Group();scene.add(town);
 const DX=36;   // distance entre deux quartiers
 let houseHits=[],floaters=[];
@@ -344,7 +346,7 @@ function townHouse(L,tier,col,par){const g=new THREE.Group(),Lx=LIEUX[L],wm=M(co
  if(L===0){box(3,2.6,3,wm,0,1.3,0,g);const r=cone(2.5,1.6,rm,0,3.4,0,g,4);r.rotation.y=Math.PI/4;r.rotation.z=crook;addWin(3,1.7,1.53,2);box(.7,1.2,.06,dk,0,.6,1.53,g)}
  else if(L===1){box(4,3,4.5,wm,0,1.5,0,g);const s=new THREE.Shape();s.moveTo(-2.4,0);s.lineTo(2.4,0);s.lineTo(0,1.8);s.lineTo(-2.4,0);const eg=new THREE.ExtrudeGeometry(s,{depth:4.7,bevelEnabled:false});eg.translate(0,0,-2.35);const r=new THREE.Mesh(eg,rm);r.rotation.y=Math.PI/2;r.position.y=3;r.rotation.x=crook;g.add(r);box(1.6,1.8,.06,M(0xeee6d6),0,.9,2.27,g);cyl(1,1,4.5,M(0x9aa0a8),3,2.25,-1,g,14)}
  else if(L===2){box(6.5,3,3,wm,0,1.5,0,g);box(6.8,.3,3.3,rm,0,3.1,0,g);box(1.4,1.6,1.4,wm,0,4,0,g);const r=cone(1.2,1.2,rm,0,5.4,0,g,4);r.rotation.y=Math.PI/4;addWin(6.5,1.9,1.53,5);box(.9,1.3,.06,dk,0,.65,1.53,g)}
- else if(L===3){box(5,5,3.2,wm,0,2.5,0,g);box(5.2,.3,3.4,rm,0,5.1,0,g);addWin(5,1.5,1.63,4);addWin(5,2.8,1.63,4);addWin(5,4.1,1.63,4);const cr=G(0xff3b3b);box(1.2,.35,.1,cr,0,5.8,0,g);box(.35,1.2,.1,cr,0,5.8,0,g)}
+ else if(L===3){cyl(1.1,1.6,7,M(0xf2eee6),0,3.5,0,g,16);[1.5,4].forEach(y=>cyl(1.35-y*.06,1.45-y*.06,1,M(0xe53935),0,y,0,g,16));cyl(1.2,1.2,.2,dk,0,7.1,0,g,16);cyl(.8,.8,1,G(tier===2?0x9cff8a:0xfff7c0),0,7.7,0,g,12);cone(1,.9,rm,0,8.65,0,g,12);halo(0xfff7c0,4,.7,g).position.set(0,7.7,0);box(2.4,1.8,2,wm,2,.9,.6,g)}
  else if(L===4){box(4.5,4,4,wm,0,2,0,g);[-2.4,2.4].forEach(x=>{cyl(1,1.05,6,wm,x,3,1.6,g,12);cone(1.35,2.2,rm,x,7.1,1.6,g,12)});for(let x=-2;x<=2;x+=1)box(.5,.5,.5,wm,x,4.25,2,g);addWin(4.5,2.4,2.03,3)}
  else{box(4,1.2,4,M(0x8a8070),0,.6,0,g);box(3,1.2,3,M(0x9a9080),0,1.8,0,g);box(2,1.4,2,wm,0,3.1,0,g);const r=cone(1.7,1.4,rm,0,4.5,0,g,4);r.rotation.y=Math.PI/4;box(.6,.9,.06,dk,0,2.85,1.03,g);halo(0xff6af0,3,.7,g).position.set(0,3,1.2)}
  g.rotation.z=crook*.3;par.add(g);return g}
@@ -359,14 +361,14 @@ function buildTown(){while(town.children.length){const c=town.children[0];town.r
   for(let i=0;i<7;i++){const x=rnd(-14,14),z=rnd(-10,-6);const tr=new THREE.Group();cyl(.15,.25,2.4,M(0x4a3828),0,1.2,0,tr,6);if(L===5){const p=cone(1.4,.6,M(0x3a8a3a),0,2.6,0,tr,6);p.scale.y=.6}else if(Math.random()<.5){sph(1.1,M(lock?0x3a3a48:0x2e5a34),0,2.8,0,tr,8,6)}else{for(let k=0;k<3;k++){const b=cyl(.04,.08,1.2,M(0x4a3828),0,2.2+k*.3,0,tr,4);b.rotation.z=(k-1)*.8}}tr.position.set(x,.4,z);pg.add(tr)}
   for(let i=0;i<5;i++){const gv=box(.6,.8,.16,M(0x9a96a8),rnd(-14,14),.8,rnd(5,8),pg);gv.rotation.y=rnd(-.4,.4)}
   [-10,10].forEach(x=>{cyl(.08,.1,2.6,M(0x2a2a30),x,1.7,7.5,pg,6);box(.35,.4,.35,G(0xffe08a),x,3.1,7.5,pg);halo(0xffd27a,3,.7,pg).position.set(x,3.1,7.5)});
-  const sign=labelSprite([Lx.ic+' '+Lx.d,lock?'🔒 Bats le boss d’avant':Lx.n],{s:7,bd:lock?'#777':'#b39ddb'});sign.position.set(0,1.2,9.6);pg.add(sign);
+  const sign=labelSprite([Lx.ic+' '+Lx.d,lock?lockTxt(L):Lx.n],{s:7,bd:lock?'#777':'#b39ddb'});sign.position.set(0,1.2,9.6);pg.add(sign);
   if(lock){halo(0x8a80a0,30,.35,pg).position.set(0,4,0);const lk=labelSprite(['🔒'],{s:2.2,bd:'#777'});lk.position.set(0,6,0);pg.add(lk);return}
   // maisons à vendre
   const mk=st.mk[L]||[];[[-9,1],[0,-3],[9,1]].forEach(([x,z],i)=>{const it=mk[i];if(!it)return;const hg=new THREE.Group();hg.position.set(x,.45,z);pg.add(hg);
    townHouse(L,it.tier,Lx.walls[i%Lx.walls.length],hg);
    const hit=box(6,7,6,new THREE.MeshBasicMaterial({visible:false}),0,3,0,hg);hit.userData={L,i};houseHits.push(hit);
-   const T0=TIERS[it.tier],s=labelSprite(['À VENDRE '+T0.ic,fmt(it.price)+' €'],{s:5,bd:T0.c});s.position.set(0,L===3||L===4?10:8,0);hg.add(s);
-   for(let k=0;k<T0.g+(T0.boss?1:0);k++)floaters.push(cuteGhost(hg,rnd(-2.5,2.5),rnd(3.5,6),rnd(-1,2),T0.boss&&k===0?1.4:.7))});
+   const T0=TIERS[it.tier],s=labelSprite(['À VENDRE '+(T0.boss&&!Lx.boss?'👻👻👻':T0.ic),fmt(it.price)+' €'],{s:5,bd:T0.c});s.position.set(0,L===3||L===4?10:8,0);hg.add(s);
+   for(let k=0;k<T0.g+(T0.boss?1:0);k++)floaters.push(cuteGhost(hg,rnd(-2.5,2.5),rnd(3.5,6),rnd(-1,2),T0.boss&&Lx.boss&&k===0?1.4:.7))});
   if(st.h&&st.h.L===L){const s=labelSprite(['🏚️ TA MAISON',st.h.name],{s:4.4,bd:'#76ff9a'});s.position.set(0,12,-3);pg.add(s)}});
 }
 function genMarket(L){st.mk[L]=[0,1,2].map(t=>newListing(L,t))}
@@ -425,7 +427,7 @@ function updDevSprites(){const h=st.h;roomObjs.forEach(o=>{o.dev.forEach(s=>{o.g
 
 // ===================== Génération d'une maison =====================
 function rollV(){const m=1+.1*st.tm.med,r=Math.random();let a=0;for(let v=3;v>=1;v--){a+=VAR[v].p*m;if(r<a)return v}return 0}
-function makeHouse(L,tier,it){const Lx=LIEUX[L],T0=TIERS[tier],n=Math.min(7,ROOMS0[L]+tier),last=Lx.rooms[Lx.rooms.length-1];
+function makeHouse(L,tier,it){const Lx=LIEUX[L],T0=Object.assign({},TIERS[tier]);if(!Lx.boss&&T0.boss){T0.boss=0;T0.g=3}const n=Math.min(7,ROOMS0[L]+tier),last=Lx.rooms[Lx.rooms.length-1];
  const list=shuffle(Lx.rooms.slice(0,-1)).slice(0,T0.boss?n-1:n);if(T0.boss)list.push(last);
  const rooms=list.map(([nm,props])=>({nm,props,cond:rnd(T0.cond[0],T0.cond[1]),col:pick(Lx.walls),g:null}));
  const ng=T0.g+(L>=3&&tier?1:0),pool=tier===0?Lx.pool.slice(0,4):tier===1?Lx.pool:Lx.pool.slice(2);
@@ -437,7 +439,7 @@ function makeHouse(L,tier,it){const Lx=LIEUX[L],T0=TIERS[tier],n=Math.min(7,ROOM
 // ===================== État du jeu =====================
 let mode='town',camX=0,curRoom=-1,devSel='cam',night=null,scan=null,aim={hold:false,x:0,y:0},gs=null;
 let shakeT=0;const camPos=new V3(),camLook=new V3(),camPosT=new V3(),camLookT=new V3();
-function goTown(){mode='town';curRoom=-1;GO.visible=false;SHADE.visible=false;stopAim();buildTown();camX=st.h?st.h.L*DX:st.lmax*DX;setSky(0x2a2060,0xe09ab0);scene.fog=new THREE.FogExp2(LIN(0x7a5a9a),.006);
+function goTown(){mode='town';curRoom=-1;GO.visible=false;SHADE.visible=false;stopAim();gs=null;scan=null;MINI.forEach(m=>m.visible=false);$('dark').style.display='none';$('ghp').style.display='none';$('warn').style.display='none';buildTown();camX=st.h?st.h.L*DX:st.lmax*DX;setSky(0x2a2060,0xe09ab0);scene.fog=new THREE.FogExp2(LIN(0x7a5a9a),.006);
  const port=innerWidth<innerHeight;camPosT.set(camX,port?31:20,port?36:27);camLookT.set(camX,1,port?-1:0);town.visible=true;inside.visible=false;LAMP.intensity=0;renderPanel.L=-1;renderPanel();save()}
 function goHouse(){const h=st.h;if(!h)return;const left=(h.cool-Date.now())/1000;if(left>0){toast('😱 Tu as encore trop peur…<br>Reviens dans <b>'+fmtS(left)+'</b>');return}
  mode='house';curRoom=-1;town.visible=false;inside.visible=true;const Lx=LIEUX[h.L];setSky(Lx.sky[0],Lx.sky[1]);scene.fog=new THREE.FogExp2(LIN(0x2a1f4a),.012);buildInside();setLight();viewHouse();renderPanel();save()}
@@ -468,7 +470,7 @@ function renderTop(){$('money').textContent=fmt(st.m)+' €';$('sub').textConten
 // Panneau du bas selon la situation
 function renderPanel(){const pc=$('pc'),h=st.h;let html='';
  if(mode==='town'){const L=clamp(Math.round(camX/DX),0,5),Lx=LIEUX[L];
-  html='<div class="nav"><button id="nPrev" aria-label="Quartier précédent">◀</button><div class="ph"><b>'+Lx.ic+' '+Lx.d+'</b>'+(L>st.lmax?'🔒 Bats d’abord '+LIEUX[L-1].boss.n:'Touche une maison à vendre · '+Lx.n)+'</div><button id="nNext" aria-label="Quartier suivant">▶</button></div>'+
+  html='<div class="nav"><button id="nPrev" aria-label="Quartier précédent">◀</button><div class="ph"><b>'+Lx.ic+' '+Lx.d+'</b>'+(L>st.lmax?lockTxt(L):'Touche une maison à vendre · '+Lx.n)+'</div><button id="nNext" aria-label="Quartier suivant">▶</button></div>'+
    (h?'<button class="btn go" id="bGoH">🏚️ Retourner à ma maison<small>'+h.name+' · '+phaseName(h)+'</small></button>':'<div class="ph">Moins une maison coûte cher, plus elle est hantée… et plus elle rapporte !</div>')}
  else if(h.phase==='plan'){const nC=h.dev.filter(d=>d.k==='cam').length,nM=h.dev.filter(d=>d.k==='mic').length,nT=h.dev.filter(d=>d.k==='th').length;
   html='<div class="ph"><b>1. Enquête 🌙</b>Pose tes appareils : choisis-en un, puis touche une pièce.</div>'+
@@ -501,7 +503,7 @@ function bindPanel(){const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>startScan(b.dataset.t))}
 
 // ===================== 1. Acheter =====================
-function openBuy(L,i){const it=st.mk[L][i],T0=TIERS[it.tier],Lx=LIEUX[L],n=Math.min(7,ROOMS0[L]+it.tier),ng=T0.g+(L>=3&&it.tier?1:0);
+function openBuy(L,i){const it=st.mk[L][i],Lx=LIEUX[L],T0=Object.assign({},TIERS[it.tier]);if(!Lx.boss&&T0.boss){T0.boss=0;T0.g=3}const n=Math.min(7,ROOMS0[L]+it.tier),ng=T0.g+(L>=3&&it.tier?1:0);
  pop('<h2>'+Lx.ic+' '+it.name+'</h2><p style="font-size:20px"><b style="color:'+T0.c+'">'+T0.ic+' '+T0.n+'</b></p>'+
  '<div class="sec"><p>🚪 '+n+' pièces · 👻 environ '+ng+' fantôme(s)'+(T0.boss?'<br>💀 Le boss rôde ici : <b>'+Lx.boss.n+'</b>':'')+'</p><p>Prix : <b>'+fmt(it.price)+' €</b><br>Revente si bien retapée : jusqu’à <b>~'+fmt(Lx.V*(1+.1*(ng*2+(T0.boss?10:0)))*(1+.08*st.eq.van))+' €</b></p></div>'+
  (st.h?'<p>⚠️ Tu as déjà une maison en cours. Finis-la et vends-la d’abord.</p>':'')+
@@ -646,8 +648,8 @@ function updFix(dt){const h=st.h;let ch=false;h.rooms.forEach((r,i)=>{if(!r.rep)
  const fi=$('fixInfo');if(fi)fi.textContent='Beauté '+Math.round(beauty(h)*100)+' %';const sp=$('sellP');if(sp)sp.textContent=fmt(salePrice(h))+' €'}
 function sell(){const h=st.h;if(h.rooms.some(r=>r.rep)){toast('⏳ Attends la fin des travaux !');return}const p=salePrice(h),b=beauty(h);
  askYes('Vendre <b>'+h.name+'</b> pour <b>'+fmt(p)+' €</b> ?'+(b<.99?'<br><small>Elle n’est retapée qu’à '+Math.round(b*100)+' % : tu gagnerais plus en réparant tout.</small>':''),()=>{
-  const prof=p-h.paid-h.spent;earn(p);st.sold++;st.best=Math.max(st.best,prof);const nm=h.name,paid=h.paid,sp=h.spent;st.h=null;sfx.coin();jingle([523,659,784,1046,1318]);goTown();
-  pop('<h2>💰 Vendue !</h2><p><b>'+nm+'</b></p><div class="sec"><p style="text-align:left">Achat : <b>−'+fmt(paid)+' €</b><br>Travaux : <b>−'+fmt(sp)+' €</b><br>Vente : <b>+'+fmt(p)+' €</b></p></div><p style="font-family:var(--gf);font-size:28px;color:'+(prof>=0?'#b9ffcb':'#ff8a80')+'">'+(prof>=0?'Bénéfice : +':'Perte : −')+fmt(Math.abs(prof))+' €</p><p><small>Avec cet argent, améliore ton matos 🧰 et achète des maisons plus hantées !</small></p><button class="btn" id="bOk">Super !</button>');$('bOk').onclick=closePop})}
+  const prof=p-h.paid-h.spent;earn(p);st.sold++;let unl='';if(h.L===0){st.s0++;if(st.lmax===0&&st.s0>=SALES0){st.lmax=1;genMarket(1);unl='<p>🔓 Nouveau quartier : <b>'+LIEUX[1].ic+' '+LIEUX[1].d+'</b> ('+LIEUX[1].n+') !</p>'}}st.best=Math.max(st.best,prof);const nm=h.name,paid=h.paid,sp=h.spent;st.h=null;sfx.coin();jingle([523,659,784,1046,1318]);goTown();
+  pop('<h2>💰 Vendue !</h2><p><b>'+nm+'</b></p><div class="sec"><p style="text-align:left">Achat : <b>−'+fmt(paid)+' €</b><br>Travaux : <b>−'+fmt(sp)+' €</b><br>Vente : <b>+'+fmt(p)+' €</b></p></div><p style="font-family:var(--gf);font-size:28px;color:'+(prof>=0?'#b9ffcb':'#ff8a80')+'">'+(prof>=0?'Bénéfice : +':'Perte : −')+fmt(Math.abs(prof))+' €</p>'+(unl||(h.L===0&&st.lmax===0?'<p>Encore <b>'+(SALES0-st.s0)+'</b> maison(s) de ville à vendre pour débloquer la campagne.</p>':''))+'<p><small>Avec cet argent, améliore ton matos 🧰 et achète des maisons plus hantées !</small></p><button class="btn" id="bOk">Super !</button>');$('bOk').onclick=closePop})}
 
 // ===================== Matos, équipe, musée =====================
 function openEq(){let s='<h2>🧰 Matos</h2>';EQ.forEach(e=>{const l=st.eq[e.k],mx=l>=5,c=mx?0:eqCost(e,l+1);
@@ -662,7 +664,7 @@ let musTab=0;
 function openMus(t){if(t!==undefined)musTab=t;const f=musTab;let s='<h2>🏛️ Musée</h2><p>Tes fantômes rapportent <b>+'+fmt(st.mi)+' €/s</b>, même quand tu ne joues pas.</p><div class="tabs">'+FAM.map((F,i)=>'<button data-t2="'+i+'" class="'+(i===f?'on':'')+'">'+F[0]+' '+F[1]+'</button>').join('')+'<button data-t2="5" class="'+(f===5?'on':'')+'">💀 Boss</button></div>';
  if(f<5){s+='<p><small>'+FAM[f][1]+' : '+FAM[f][2]+'.</small></p>';GT.forEach((G0,t)=>{if(G0.f!==f)return;const n=typeN(t),where=LIEUX.map(L=>L.pool.indexOf(t)>=0?L.ic:'').join('');
   s+='<div class="row'+(n?'':' lock')+'"><div class="ri" style="background:'+(n?hex(G0.dark?0x3a2a5c:G0.c):'var(--bg3)')+'">'+(n?'👻':'?')+'</div><div class="rt">'+(n?G0.n:'???')+'<small>'+G0.d+'</small><small>Indices : '+G0.cl.split('').map(c=>CLUES[c][0]).join(' ')+' · Faiblesse : '+G0.w+'</small><small>Où : '+where+(n?' · ×'+n:'')+'</small><div>'+VAR.map((V,v)=>{const c=musN(t,v);return '<span class="var'+(c?' got':'')+'" style="'+(c?'background:'+V.c:'')+'">'+V.ic+' '+(c?V.n+' ×'+c:'???')+'</span>'}).join('')+'</div></div></div>'})}
- else LIEUX.forEach((Lx,L)=>{const n=st.boss[L]||0;s+='<div class="row'+(n?'':' lock')+'"><div class="ri" style="background:'+(n?hex(Lx.boss.c):'var(--bg3)')+'">'+(n?'💀':'?')+'</div><div class="rt">'+(n?Lx.boss.n:'???')+'<small>'+Lx.ic+' '+Lx.d+(n?' · vaincu '+n+' fois':'')+'</small><em>'+(n?Lx.boss.d:'Il t’attend dans une maison maudite…')+'</em></div></div>'});
+ else LIEUX.forEach((Lx,L)=>{if(!Lx.boss)return;const n=st.boss[L]||0;s+='<div class="row'+(n?'':' lock')+'"><div class="ri" style="background:'+(n?hex(Lx.boss.c):'var(--bg3)')+'">'+(n?'💀':'?')+'</div><div class="rt">'+(n?Lx.boss.n:'???')+'<small>'+Lx.ic+' '+Lx.d+(n?' · vaincu '+n+' fois':'')+'</small><em>'+(n?Lx.boss.d:'Il t’attend dans une maison maudite…')+'</em></div></div>'});
  pop(s);document.querySelectorAll('[data-t2]').forEach(b=>b.onclick=()=>openMus(+b.dataset.t2))}
 $('bMus').onclick=()=>openMus();
 function openMore(){pop('<h2>⭐ Plus</h2><div class="sec"><h3>📊 Statistiques</h3><p style="text-align:left">Maisons vendues : <b>'+st.sold+'</b><br>Meilleur bénéfice : <b>'+fmt(st.best)+' €</b><br>Fantômes attrapés : <b>'+st.caps+'</b><br>Boss vaincus : <b>'+st.boss.reduce((a,b)=>a+(b||0),0)+'</b><br>Musée : <b>+'+fmt(st.mi)+' €/s</b></p></div>'+

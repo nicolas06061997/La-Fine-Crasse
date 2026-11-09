@@ -48,7 +48,7 @@ Fait d'après les goûts de l'utilisateur : nature/pêche, lacs et rivières, co
 
 ## Troisième jeu : Chasseur de Maisons Hantées (dossier `fantomes/`)
 Jeu de gestion 3D : acheter une maison hantée pas chère, enquêter de nuit, chasser les fantômes, retaper, revendre. Ville inventée : Brumeville.
-En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplacé l'ancien « Fantômes & Cie », visible dans l'historique git).
+En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplacé l'ancien « Fantômes & Cie », visible dans l'historique git). Le phare remplace l'hôpital de la demande d'origine, pour caser le Gardien du Phare.
 - Tout est dans `fantomes/index.html` ; son propre `fantomes/sw.js` (caches `fc-…`), `version.json`, `manifest.webmanifest`, `icons/`.
 - À chaque modification : changer `APPV` dans `fantomes/index.html` **et** `v` dans `fantomes/version.json` (même valeur, + `notes`).
 - Sauvegarde `localStorage` clé `cmh_save` (`sv:1`) : `m`, `lmax` (quartier débloqué), `mk[lieu]` (3 maisons à vendre), `h` (maison en cours : `rooms` {nm,props,cond,col,g:{ty,v,hp,mx,cap,boss}}, `cn` (carnet par pièce : p présence, f indices trouvés, x indices exclus, boss), `dev`, `phase` plan/night/hunt/fix, `fear`, `cool`, `paid`, `spent`), `eq` (matos 0-5), `tm` (équipe 0-5), `mus` (musée, index type*4+variante), `mi` (€/s du musée), `boss`, `sold`, `caps`, `best`.
@@ -56,5 +56,6 @@ En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplac
 - Outils → indices : caméra et 👀 observer = 💡📦 ; micro = 🎙️ (niv. 2 : 📼) ; thermomètre = ❄️ ; lampe UV (lampe niv. 1) = 🟣 et voit les Ombres. Un appareil qui ne trouve rien exclut l'indice (`addX`).
 - 3D : ville `buildTown` (quartiers espacés de `DX`, maisons `townHouse`), maison vue de dessus `buildInside`/`buildRoom`/`prop` (placée en `HOME`), fantômes `mkGhost`/`skinGhost`, boss `skinBoss` (dents, yeux rouges, chapeau).
 - Phases : `openBuy` → `placeDev`/`startNight`/`updNight`/`endNight` → `enterRoom`/`startScan`/`openCarnet`/`useWeapon`/`updRoom`/`captureGhost` (peur pleine → `flee`) → `openFix`/`repair`/`updFix` → `sell`.
+- Lieux : maisons de ville (pas de boss : vendre `SALES0`=3 maisons débloque la suite, compteur `s0`), fermes → Sorcière du Marais, écoles → Directeur de l'École, phares → Gardien du Phare, châteaux → Comte du Manoir, île maudite → Reine de l'Île Maudite.
 - Le boss d'un quartier est dans la maison « Maudite » ; le battre débloque le quartier suivant (`lmax`).
-- Liste des fantômes : celle de l'utilisateur (15). Boss : Sorcière, Directeur, Comte, Reine viennent de lui ; Locataire du Grenier et Chirurgien Fou inventés (sa liste n'était pas arrivée).
+- Fantômes et boss : exactement la liste de l'utilisateur (15 fantômes, 5 boss). Ne pas en inventer d'autres sans lui demander.
