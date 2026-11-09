@@ -1,4 +1,4 @@
-// Service worker de Fantômes & Cie : jeu disponible hors ligne et mises à jour immédiates.
+// Service worker de Chasseur de Maisons Hantées : jeu disponible hors ligne et mises à jour immédiates.
 // La version vient de index.html (APPV), passée dans l'adresse : sw.js?v=…
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'fc-' + VERSION;

@@ -46,14 +46,15 @@ Fait d'après les goûts de l'utilisateur : nature/pêche, lacs et rivières, co
 - Décor par lieu : `buildDecor`, `applySpot` ; bateau/pêcheur : `buildBoat` (`BOATS`, 8 bateaux). Succès : `ACH`, `chkAch`.
 - Équilibre vérifié par simulation (achat glouton, en lisant le bloc RULES) : `SPD=3` : 1er boss ≈ 20 min, 5e ≈ 4,5 h, dernier (10e) ≈ 200 h de jeu actif (le Championnat accélère).
 
-## Troisième jeu : Fantômes & Cie (dossier `fantomes/`)
-Jeu de gestion « idle » 3D : agence de chasseurs de fantômes. Indépendant des deux autres ; l'utilisateur le mettra plus tard dans son propre dépôt GitHub.
-Contenu imaginé par l'utilisateur : 15 fantômes en 5 familles (indices + faiblesse), 5 boss avec pouvoirs, carnet d'indices, variantes rares, musée.
+## Troisième jeu : Chasseur de Maisons Hantées (dossier `fantomes/`)
+Jeu de gestion 3D : acheter une maison hantée pas chère, enquêter de nuit, chasser les fantômes, retaper, revendre. Ville inventée : Brumeville.
+En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplacé l'ancien « Fantômes & Cie », visible dans l'historique git).
 - Tout est dans `fantomes/index.html` ; son propre `fantomes/sw.js` (caches `fc-…`), `version.json`, `manifest.webmanifest`, `icons/`.
 - À chaque modification : changer `APPV` dans `fantomes/index.html` **et** `v` dans `fantomes/version.json` (même valeur, + `notes`).
-- Sauvegarde `localStorage` clé `fc_save` (`sv:2`) : `m`, `ecto` (🧪), `spot`/`maxSpot`, `lvs[lieu]` ({val,spd,spn,emf}), `hun` (chasseurs {nm,t=trait,s=étoiles,lv,sk,hr,hs=look}), `cand`, `res` (labo), `mus` (musée, index type*4+variante), `bc` (boss), `ach`, `enq`, `badges`/`fr` (Franchise), `run`, `life`, `moon`, `caps`.
-- Règles entre `RULES-START` et `RULES-END` : `FAM`, `CLUES` (L F M U O V), `GT` (15 fantômes, `cl` = 3 indices tous différents), `VAR` (Normal/Doré/Arc-en-ciel/Cristal), `PLACES` (5 lieux : forme `h`, `pool` de 6 fantômes, `boss` avec `hat` et `ab` = call/curse/dark/lock/all), `UPS`, `HIRE`/`TRAITS`/`hLvCost`, `RES`, `bossHP`/`BH`.
-- 3D : `buildPlace` (bâtiment fait de boîtes, ciel en dégradé `setSky`, eau si `water`), fantômes `mkGhost`/`skin`/`POOL`/`spawnGhost`, chasseurs mignons `mkHunter`/`animHunter`/`placeHunters`, `updGhosts`. Toucher un fantôme = ×2 ; esprit de lune = Pleine lune ×3.
-- Enquête : `ENQ`, `newEnq`, `updEnq`, `openCarnet`, `guess` (bonne arme = bonus + `buff` ×2 ; mauvaise = `angry` ÷2).
-- Boss : `openBoss`, `startFight`, `bossAb` (pouvoirs), `updFight` (garder le viseur sur le boss), `endFight`.
-- Équilibre (simulation gloutonne en lisant le bloc RULES) : boss 1 ≈ 11 min, 2 ≈ 45 min, 3 ≈ 1 h 50, 4 ≈ 6 h 30, 5 ≈ 26 h.
+- Sauvegarde `localStorage` clé `cmh_save` (`sv:1`) : `m`, `lmax` (quartier débloqué), `mk[lieu]` (3 maisons à vendre), `h` (maison en cours : `rooms` {nm,props,cond,col,g:{ty,v,hp,mx,cap,boss}}, `cn` (carnet par pièce : p présence, f indices trouvés, x indices exclus, boss), `dev`, `phase` plan/night/hunt/fix, `fear`, `cool`, `paid`, `spent`), `eq` (matos 0-5), `tm` (équipe 0-5), `mus` (musée, index type*4+variante), `mi` (€/s du musée), `boss`, `sold`, `caps`, `best`.
+- Règles entre `RULES-START` et `RULES-END` : `FAM`, `CLUES` (L F M U O V), `GT` (15 fantômes, `cl` = 3 indices tous différents, `w` = faiblesse), `VAR` (variantes), `LIEUX` (6 lieux : `V` valeur, `rooms`, `pool` de 6 fantômes, `boss` avec `hat` et `ab` = throw/curse/lock/dark/call/all), `TIERS` (un peu hantée / très hantée / maudite = boss), `EQ` (matos), `TEAM`, `salePrice`, `repCost`, `musRate`, `ghostHP`/`bossHP`/`power`.
+- Outils → indices : caméra et 👀 observer = 💡📦 ; micro = 🎙️ (niv. 2 : 📼) ; thermomètre = ❄️ ; lampe UV (lampe niv. 1) = 🟣 et voit les Ombres. Un appareil qui ne trouve rien exclut l'indice (`addX`).
+- 3D : ville `buildTown` (quartiers espacés de `DX`, maisons `townHouse`), maison vue de dessus `buildInside`/`buildRoom`/`prop` (placée en `HOME`), fantômes `mkGhost`/`skinGhost`, boss `skinBoss` (dents, yeux rouges, chapeau).
+- Phases : `openBuy` → `placeDev`/`startNight`/`updNight`/`endNight` → `enterRoom`/`startScan`/`openCarnet`/`useWeapon`/`updRoom`/`captureGhost` (peur pleine → `flee`) → `openFix`/`repair`/`updFix` → `sell`.
+- Le boss d'un quartier est dans la maison « Maudite » ; le battre débloque le quartier suivant (`lmax`).
+- Liste des fantômes : celle de l'utilisateur (15). Boss : Sorcière, Directeur, Comte, Reine viennent de lui ; Locataire du Grenier et Chirurgien Fou inventés (sa liste n'était pas arrivée).

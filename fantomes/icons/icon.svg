@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<defs><radialGradient id="bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#4a2d8a"/><stop offset="1" stop-color="#120c24"/></radialGradient>
-<radialGradient id="gl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#b9ffcb" stop-opacity=".7"/><stop offset="1" stop-color="#76ff9a" stop-opacity="0"/></radialGradient></defs>
+<defs><radialGradient id="bg" cx="50%" cy="30%" r="80%"><stop offset="0" stop-color="#5a3a9a"/><stop offset="1" stop-color="#160e2c"/></radialGradient>
+<radialGradient id="gl" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#b9ffcb" stop-opacity=".6"/><stop offset="1" stop-color="#76ff9a" stop-opacity="0"/></radialGradient></defs>
 <rect width="512" height="512" fill="url(#bg)"/>
-<circle cx="390" cy="110" r="58" fill="#fff3c4"/><circle cx="410" cy="96" r="52" fill="#3a2470" opacity=".0"/>
-<path d="M40 512 L40 330 L150 250 L260 330 L260 512Z" fill="#1a1030"/><path d="M20 340 L150 236 L280 340" fill="none" stroke="#0c0618" stroke-width="22"/>
-<rect x="80" y="360" width="40" height="50" fill="#ffb84d"/><rect x="180" y="360" width="40" height="50" fill="#ffb84d" opacity=".6"/><rect x="130" y="430" width="44" height="82" fill="#0c0618"/>
-<circle cx="320" cy="270" r="170" fill="url(#gl)"/>
-<path d="M230 400 L230 250 A90 90 0 0 1 410 250 L410 400 L380 375 L350 400 L320 375 L290 400 L260 375Z" fill="#eef4ff"/>
-<ellipse cx="290" cy="250" rx="16" ry="26" fill="#14081e"/><ellipse cx="350" cy="250" rx="16" ry="26" fill="#14081e"/><ellipse cx="320" cy="310" rx="22" ry="16" fill="#14081e"/>
-<ellipse cx="222" cy="320" rx="20" ry="28" fill="#eef4ff"/><ellipse cx="418" cy="320" rx="20" ry="28" fill="#eef4ff"/>
+<circle cx="400" cy="100" r="52" fill="#fff3c4"/>
+<path d="M60 512 L60 290 L200 180 L340 290 L340 512Z" fill="#2a1a40"/><path d="M36 300 L200 166 L364 300" fill="none" stroke="#120a20" stroke-width="26" stroke-linejoin="round"/>
+<rect x="105" y="320" width="50" height="60" fill="#ffd27a"/><rect x="245" y="320" width="50" height="60" fill="#9cff8a"/><rect x="172" y="410" width="56" height="102" fill="#120a20"/>
+<g transform="rotate(-8 120 230)"><rect x="20" y="420" width="150" height="62" rx="8" fill="#e8d0a0" stroke="#5a3a1a" stroke-width="6"/><text x="95" y="462" font-family="Arial Black,Arial" font-weight="900" font-size="30" text-anchor="middle" fill="#c62828">À VENDRE</text></g>
+<circle cx="360" cy="260" r="150" fill="url(#gl)"/>
+<path d="M290 380 L290 250 A75 75 0 0 1 440 250 L440 380 L415 360 L390 380 L365 360 L340 380 L315 360Z" fill="#eef4ff"/>
+<ellipse cx="340" cy="250" rx="18" ry="24" fill="#fff"/><ellipse cx="392" cy="250" rx="18" ry="24" fill="#fff"/>
+<ellipse cx="342" cy="254" rx="10" ry="14" fill="#14081e"/><ellipse cx="394" cy="254" rx="10" ry="14" fill="#14081e"/>
+<ellipse cx="366" cy="305" rx="18" ry="14" fill="#14081e"/>
 </svg>

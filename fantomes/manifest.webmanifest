@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Fantômes & Cie",
-  "short_name": "Fantômes",
-  "description": "Dirige ton agence de chasseurs de fantômes : nettoie des maisons hantées et deviens riche !",
+  "name": "Chasseur de Maisons Hantées",
+  "short_name": "Maisons Hantées",
+  "description": "Achète des maisons hantées pour presque rien, chasse les fantômes, retape et revends cher !",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "./",
@@ -11,10 +11,27 @@
   "orientation": "portrait",
   "background_color": "#120c24",
   "theme_color": "#1b1236",
-  "categories": ["games"],
+  "categories": [
+    "games"
+  ],
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
