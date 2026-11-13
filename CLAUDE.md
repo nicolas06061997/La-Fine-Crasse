@@ -64,3 +64,11 @@ En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplac
 - Contenu en plus : décoration `DECO` (revente +), acheteurs `offers` (famille, collectionneur, promoteur / youtubeuse), demandes des habitants `st.ms`/`newMission`/`ev()`/`openMis` (bouton 📜), objets maudits `OBJ` à toucher dans les pièces (`collectItem`, onglet musée 🧿), bulles des fantômes `LINES`/`BOSSL`/`bubble`, bords rouges + cœur quand la peur monte, musique `music()` (`st.music`), nouvelles annonces (`st.mkT`).
 - Mises à jour automatiques (`chkUpd`/`tryUpd`) : nouvelle version → sauvegarde + rechargement tout seul (pas pendant une nuit ni dans une pièce) ; une seule fois par version (`sessionStorage` `cmh_upd`), sinon bouton de secours. Installation comme une appli : bouton `#inst` (`beforeinstallprompt` → `doInstall`, sinon explications iPhone/Android), aussi dans ⭐.
 - Succès `ACH` (+3 % de revente chacun, vérifiés dans `step` toutes les 3 s) ; compteurs `okw` (bonnes armes), `nights`, `flees`.
+
+## Quatrième jeu : MYTHORIA (dossier `mythoria/`)
+Grand jeu de stratégie médiéval-fantastique multijoueur (cahier des charges du 13/11/2026, plan en 7 phases : `mythoria/docs/ROADMAP.md`).
+En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ . L'utilisateur voulait un dépôt « mythoria-game » : impossible à créer depuis la session (accès limité à ce dépôt) ; le dossier est autonome et peut y être déplacé tel quel.
+- Plusieurs fichiers (modules ES, pas de build). Règles partagées client/serveur dans `src/shared/` (content.js, sim.js déterministe, ai.js, rng.js) ; jeu dans `src/client/` (battle.js, store.js, render/arena.js, render/sprites.js, ui/app.js). Détails : `mythoria/docs/ARCHITECTURE.md`.
+- À chaque modification : changer `data-version` dans `mythoria/index.html` **et** `v` dans `mythoria/version.json` (+ `notes`). Si un nouveau fichier JS est ajouté, l'ajouter à `FILES` dans `mythoria/sw.js`.
+- Tests : `cd mythoria && npm test` (node --test, aucune dépendance). Test navigateur : `?speed=4` accélère le combat, `window.__battle` donne le combat en cours.
+- Sauvegarde locale `myt_profile_v1` (en attendant le serveur, phase 3). Jamais de faux joueurs : l'IA est toujours affichée « 🤖 IA ».
