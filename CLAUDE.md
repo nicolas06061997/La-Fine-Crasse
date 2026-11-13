@@ -66,9 +66,11 @@ En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplac
 - Succès `ACH` (+3 % de revente chacun, vérifiés dans `step` toutes les 3 s) ; compteurs `okw` (bonnes armes), `nights`, `flees`.
 
 ## Quatrième jeu : MYTHORIA (dossier `mythoria/`)
-Grand jeu de stratégie médiéval-fantastique multijoueur (cahier des charges du 13/11/2026, plan en 7 phases : `mythoria/docs/ROADMAP.md`).
-En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ . L'utilisateur voulait un dépôt « mythoria-game » : impossible à créer depuis la session (accès limité à ce dépôt) ; le dossier est autonome et peut y être déplacé tel quel.
-- Plusieurs fichiers (modules ES, pas de build). Règles partagées client/serveur dans `src/shared/` (content.js, sim.js déterministe, ai.js, rng.js) ; jeu dans `src/client/` (battle.js, store.js, render/arena.js, render/sprites.js, ui/app.js). Détails : `mythoria/docs/ARCHITECTURE.md`.
-- À chaque modification : changer `data-version` dans `mythoria/index.html` **et** `v` dans `mythoria/version.json` (+ `notes`). Si un nouveau fichier JS est ajouté, l'ajouter à `FILES` dans `mythoria/sw.js`.
-- Tests : `cd mythoria && npm test` (node --test, aucune dépendance). Test navigateur : `?speed=4` accélère le combat, `window.__battle` donne le combat en cours.
-- Sauvegarde locale `myt_profile_v1` (en attendant le serveur, phase 3). Jamais de faux joueurs : l'IA est toujours affichée « 🤖 IA ».
+Grand jeu de stratégie fantastique 3D multijoueur (cahier des charges du 13/11/2026, plan en 7 phases : `mythoria/docs/ROADMAP.md`).
+En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ . L'utilisateur voulait un dépôt « mythoria-game » : impossible à créer depuis la session ; le dossier est autonome et peut y être déplacé.
+- Refonte 3D du 13/11 (l'utilisateur ne voulait plus d'un clone de Clash Royale, voulait une qualité proche de TFT) : concept « Les Failles » (île flottante, 1 Sanctuaire par camp, Cœur de Mythe au centre, Cercle d'Invocation 5 socles : invoquer 2 éther / fusionner ★3 / glisser sur l'île, 1 sortilège par deck via jauge d'Éveil). Détails et limites honnêtes : `mythoria/docs/ARCHITECTURE.md`.
+- three.js r160 dans `mythoria/vendor/` (import map dans index.html). Modèles CC0 KayKit (même squelette, banque `assets/models/heroes/anims.glb`) + Quaternius ; créatures faites par le code dans `three/procedural.js`. Crédits : `mythoria/CREDITS.md`.
+- Règles partagées `src/shared/` (content.js : HEROES/SPELLS/WORLDS/UNLOCKS ; sim.js déterministe ; ai.js). 3D : `src/client/three/` ; menus : `src/client/ui/app.js` ; combat : `src/client/battle.js`.
+- À chaque modification : `data-version` dans `mythoria/index.html` **et** `v` dans `mythoria/version.json` (+ `notes`). Nouveau fichier JS → l'ajouter à `FILES` dans `mythoria/sw.js`.
+- Tests : `cd mythoria && npm test`. Navigateur sans écran : lancer chromium avec `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader` ; `?speed=4` accélère ; `window.__battle` = combat en cours (`send({p:0,t:'summon'|'merge'|'deploy'|'spell',...})`).
+- Sauvegarde locale `myt_profile_v2`. Jamais de faux joueurs : l'IA est toujours affichée « 🤖 IA ».

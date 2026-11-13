@@ -3,8 +3,10 @@
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'mythoria-' + VERSION;
 const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', './icons/icon.svg',
-  './src/client/main.js', './src/client/ui/app.js', './src/client/ui/dom.js', './src/client/battle.js',
-  './src/client/store.js', './src/client/audio.js', './src/client/render/arena.js', './src/client/render/sprites.js',
+  './vendor/three.module.min.js', './vendor/addons/loaders/GLTFLoader.js', './vendor/addons/utils/SkeletonUtils.js', './vendor/addons/utils/BufferGeometryUtils.js',
+  './src/client/main.js', './src/client/ui/app.js', './src/client/ui/dom.js', './src/client/ui/icons.js', './src/client/battle.js',
+  './src/client/store.js', './src/client/audio.js', './src/client/three/assets.js', './src/client/three/procedural.js', './src/client/three/world.js',
+  './src/client/three/fx.js', './src/client/three/battleview.js', './src/client/three/stage.js', './src/client/three/showcase.js',
   './src/shared/content.js', './src/shared/sim.js', './src/shared/ai.js', './src/shared/rng.js'];
 
 self.addEventListener('install', e => {
@@ -14,7 +16,7 @@ self.addEventListener('install', e => {
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k.startsWith('mythoria-') && k !== CACHE && k !== 'mythoria-fonts').map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith('mythoria-') && k !== CACHE && k !== 'mythoria-fonts' && k !== 'mythoria-models').map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 // Réseau d'abord (dernière version), copie locale si pas de connexion.
@@ -34,5 +36,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') { e.respondWith(fonts(req)); return; }
   if (url.origin !== location.origin) return;
   if (url.pathname.endsWith('/version.json')) return;
+  // Modèles 3D : copie locale d'abord (ils ne changent presque jamais ; nouveau nom de fichier si besoin).
+  if (url.pathname.includes('/assets/models/')) { e.respondWith(caches.open('mythoria-models').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; })))); return; }
   e.respondWith(networkFirst(req));
 });

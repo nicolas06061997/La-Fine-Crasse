@@ -36,6 +36,7 @@ const SFX = {
   heal: () => { tone(523, 0.3, 'sine', 0.08); tone(784, 0.3, 'sine', 0.08, 1, 0.08); },
   zap: () => { noise(0.15, 0.12, 4000); tone(1800, 0.12, 'sawtooth', 0.05, 0.3); },
   fuse: () => { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.18, 'triangle', 0.1, 1, i * 0.07)); },
+  summon: () => { tone(392, 0.18, 'triangle', 0.08, 2); tone(784, 0.3, 'sine', 0.07, 1.5, 0.08); noise(0.2, 0.05, 3000, 0.05); },
   reject: () => tone(180, 0.15, 'square', 0.06),
   tick: () => tone(880, 0.08, 'square', 0.06),
   go: () => { tone(523, 0.12, 'square', 0.08); tone(1046, 0.3, 'square', 0.08, 1, 0.1); },

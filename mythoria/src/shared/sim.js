@@ -1,118 +1,168 @@
-// MYTHORIA — simulation des combats (moteur de règles).
-// Déterministe : même graine + mêmes commandes = exactement le même combat.
-// C'est ce qui permettra au serveur (phase 3) de rejouer et vérifier chaque combat (anti-triche).
-// Pas de Math.sin/cos/random ici : seulement + - * / et sqrt, identiques partout.
+// MYTHORIA — simulation des combats « Les Failles ».
+// Une île flottante ovale. Chaque camp a UN Sanctuaire. Au centre, le Cœur de Mythe :
+// le camp qui le contrôle gagne de l'éther plus vite et remplit sa jauge d'Éveil (sortilège).
+// Les héros sont invoqués au hasard sur un Cercle d'Invocation (5 places), fusionnés (★2, ★3)
+// puis envoyés sur l'île. Ils combattent tout seuls.
+//
+// Déterministe : même graine + mêmes commandes = même combat (base de l'anti-triche en ligne).
+// Pas de Math.sin/cos/random ici : seulement + - * / et sqrt.
 
-import { CARD, STAR_MULT, STAR_SIZE, MAX_STAR, levelMult, deckSynergies } from './content.js';
-import { makeRng, shuffle } from './rng.js';
+import { HERO, SPELL, RARITIES, STAR_MULT, STAR_SIZE, MAX_STAR, levelMult, deckSynergies } from './content.js';
 
-export const W = 18, H = 32, RIVER = 16, BRIDGES = [3.5, 14.5];
+export const W = 16, H = 24, CX = 8, CY = 12, RX = 7.6, RY = 11.6;
 export const TICK_RATE = 20, DT = 1 / TICK_RATE;
 export const MATCH_TIME = 180, DOUBLE_AT = 120, OVERTIME = 60;
-export const MANA_MAX = 10, MANA_START = 5, MANA_REGEN = 2.8; // secondes par point
+export const MANA_MAX = 10, MANA_START = 4, MANA_REGEN = 2.0; // secondes par point
+export const SUMMON_COST = 2, BENCH = 5, EVEIL_TIME = 35;
+export const HEART = { x: CX, y: CY, r: 2.6, rate: 0.45 };
+export const SANCT = { hp: 12000, dmg: 100, hit: 0.85, range: 6.5, r: 1.7, splash: 1.0, y: [21.8, 2.2] };
 const DEPLOY_TIME = 1.0, SIGHT = 5.5;
-
-export const TOWERS = {
-  side:    { hp: 1400, dmg: 52, hit: 0.8, range: 7, r: 1.0 },
-  citadel: { hp: 2600, dmg: 64, hit: 1.0, range: 7, r: 1.4 },
-};
 
 const sq = x => x * x;
 const dist = (a, b) => Math.sqrt(sq(a.x - b.x) + sq(a.y - b.y));
-const side = y => (y < RIVER ? 1 : 0); // 0 = moitié du bas (joueur 0), 1 = moitié du haut
 
-export function createBattle({ seed = 1, decks, levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'] }) {
-  const rng = makeRng(seed);
+// ---- hasard reproductible stocké dans l'état ----
+function rnd(s) {
+  s.rng = (s.rng + 0x6D2B79F5) >>> 0;
+  let t = s.rng;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+export function inIsland(x, y, margin = 0) {
+  return sq((x - CX) / (RX - margin)) + sq((y - CY) / (RY - margin)) <= 1;
+}
+function clampIsland(e) {
+  const dx = (e.x - CX) / RX, dy = (e.y - CY) / RY, d = Math.sqrt(dx * dx + dy * dy);
+  const lim = 1 - e.r / RX * 0.6;
+  if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
+}
+
+export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'] }) {
   const s = {
-    tick: 0, t: 0, seed, rngState: 0, nextId: 1, ents: [], proj: [], pend: [], ev: [],
+    tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
     over: false, winner: -1, reason: '', overtime: false,
-    players: [0, 1].map(p => {
-      const deck = shuffle(decks[p].slice(), rng);
-      const syn = deckSynergies(decks[p]).tiers;
-      return {
-        name: names[p], mana: MANA_START, hand: deck.slice(0, 4), queue: deck.slice(4), crowns: 0,
-        levels: levels[p] || {}, syn, played: 0, spent: 0,
-      };
-    }),
+    heart: { ctl: 0, owner: -1 },
+    players: [0, 1].map(p => ({
+      name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
+      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0,
+    })),
   };
-  s.rngState = rng.state();
   for (const p of [0, 1]) {
-    const y0 = p === 0 ? 25.5 : 6.5, yc = p === 0 ? 29 : 3;
-    addTower(s, p, 'side', 3.5, y0, 0);
-    addTower(s, p, 'side', 14.5, y0, 1);
-    addTower(s, p, 'citadel', 9, yc, -1);
+    s.ents.push({ id: s.nextId++, p, kind: 'sanct', x: CX, y: SANCT.y[p], px: CX, py: SANCT.y[p], hp: SANCT.hp, maxHp: SANCT.hp,
+      dmg: SANCT.dmg, hit: SANCT.hit, cd: 0, range: SANCT.range, r: SANCT.r, tgt: 'any', proj: 'bolt', splash: SANCT.splash, star: 1, shield: 0, frozen: 0, slowT: 0, dead: false });
   }
+  // Chaque camp commence avec 2 héros sur son cercle.
+  for (const p of [0, 1]) for (let k = 0; k < 2; k++) summonHero(s, p);
+  s.ev = [];
   return s;
 }
 
-function addTower(s, p, sub, x, y, lane) {
-  const T = TOWERS[sub];
-  s.ents.push({ id: s.nextId++, p, kind: 'tower', sub, lane, x, y, px: x, py: y, hp: T.hp, maxHp: T.hp,
-    dmg: T.dmg, hit: T.hit, cd: 0, range: T.range, r: T.r, tgt: 'any', proj: 'arrow', star: 1, shield: 0, frozen: 0, dead: false });
+export const sanctOf = (s, p) => s.ents.find(e => e.kind === 'sanct' && e.p === p);
+
+// ---------- Validation (anti-triche) ----------
+export function deployOk(p, x, y) {
+  if (!inIsland(x, y, 0.4)) return false;
+  return p === 0 ? y >= CY + 0.8 : y <= CY - 0.8;
 }
 
-// ---------- Règles de déploiement ----------
-
-export function towerAlive(s, p, lane) {
-  return s.ents.some(e => e.kind === 'tower' && e.p === p && e.lane === lane && !e.dead);
-}
-
-// Zones où le joueur p peut poser une troupe : [x0, y0, x1, y1]
-export function deployZones(s, p) {
-  const z = [];
-  if (p === 0) {
-    z.push([0.5, 17.2, 17.5, 31.5]);
-    if (!towerAlive(s, 1, 0)) z.push([0.5, 10, 9, 17.2]);
-    if (!towerAlive(s, 1, 1)) z.push([9, 10, 17.5, 17.2]);
-  } else {
-    z.push([0.5, 0.5, 17.5, 14.8]);
-    if (!towerAlive(s, 0, 0)) z.push([0.5, 14.8, 9, 22]);
-    if (!towerAlive(s, 0, 1)) z.push([9, 14.8, 17.5, 22]);
-  }
-  return z;
-}
-
-export function canPlay(s, p, cardId, x, y) {
+export function check(s, cm) {
   if (s.over) return 'Le combat est terminé.';
-  const P = s.players[p], c = CARD[cardId];
-  if (!c || c.token) return 'Carte inconnue.';
-  if (!P.hand.includes(cardId)) return 'Carte pas dans la main.';
-  if (P.mana + 1e-9 < c.cost) return 'Pas assez d’éther.';
-  if (!(x >= 0.3 && x <= W - 0.3 && y >= 0.3 && y <= H - 0.3)) return 'Hors de l’arène.';
-  if (c.type !== 'spell' && !deployZones(s, p).some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1))
-    return 'Pose tes troupes dans ta zone.';
-  return null;
+  const P = s.players[cm.p];
+  if (!P) return 'Joueur inconnu.';
+  switch (cm.t) {
+    case 'summon':
+      if (P.mana + 1e-9 < SUMMON_COST) return 'Pas assez d’éther.';
+      if (!P.bench.includes(null)) return 'Cercle d’invocation plein.';
+      return null;
+    case 'merge': {
+      const a = P.bench[cm.a], b = P.bench[cm.b];
+      if (cm.a === cm.b || !a || !b) return 'Fusion impossible.';
+      if (a.id !== b.id || a.star !== b.star) return 'Il faut deux héros identiques de même rang.';
+      if (b.star >= MAX_STAR) return 'Rang maximum atteint.';
+      return null;
+    }
+    case 'deploy': {
+      const h = P.bench[cm.slot];
+      if (!h) return 'Aucun héros ici.';
+      if (!(cm.x >= 0 && cm.x <= W && cm.y >= 0 && cm.y <= H)) return 'Hors de l’île.';
+      if (!deployOk(cm.p, cm.x, cm.y)) return 'Pose tes héros sur ta moitié de l’île.';
+      return null;
+    }
+    case 'spell':
+      if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
+      if (!inIsland(cm.x, cm.y)) return 'Vise l’île.';
+      return null;
+  }
+  return 'Commande inconnue.';
 }
 
-// ---------- Création des unités ----------
+// ---------- Invocation ----------
+function summonHero(s, p) {
+  const P = s.players[p];
+  const slot = P.bench.indexOf(null);
+  if (slot < 0) return;
+  let tot = 0;
+  for (const id of P.deck) tot += RARITIES[HERO[id].rar].weight;
+  let r = rnd(s) * tot, pick = P.deck[0];
+  for (const id of P.deck) { r -= RARITIES[HERO[id].rar].weight; if (r <= 0) { pick = id; break; } }
+  P.bench[slot] = { id: pick, star: 1 };
+  P.summons++;
+  s.ev.push({ type: 'summon', p, slot, id: pick });
+}
 
+function apply(s, cm) {
+  const P = s.players[cm.p];
+  if (cm.t === 'summon') { P.mana -= SUMMON_COST; summonHero(s, cm.p); }
+  else if (cm.t === 'merge') {
+    P.bench[cm.b].star++; P.bench[cm.a] = null;
+    s.ev.push({ type: 'benchFuse', p: cm.p, slot: cm.b, star: P.bench[cm.b].star, id: P.bench[cm.b].id });
+  } else if (cm.t === 'deploy') {
+    const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.deployed++;
+    deployHero(s, cm.p, h, cm.x, cm.y);
+  } else if (cm.t === 'spell') {
+    P.eveil = 0;
+    const c = SPELL[P.spell];
+    s.ev.push({ type: 'cast', p: cm.p, spell: P.spell, x: cm.x, y: cm.y, delay: c.delay || 0 });
+    const n = c.strikes || 1;
+    for (let k = 0; k < n; k++) s.pend.push({ at: s.tick + Math.round(((c.delay || 0) + k * 0.45) * TICK_RATE), p: cm.p, spell: P.spell, x: cm.x, y: cm.y, k });
+  }
+}
+
+// ---------- Héros sur l'île ----------
 function mults(s, p, c) {
-  const syn = s.players[p].syn, t = syn[c.fac] || 0;
+  const t = s.players[p].syn[c.fac] || 0;
   return {
     hp: c.fac === 'aube' ? [1, 1.12, 1.25][t] : 1,
     dmg: c.fac === 'arcane' ? [1, 1.15, 1.3][t] : 1,
     regen: c.fac === 'sylve' ? [0, 0.02, 0.04][t] : 0,
     atk: c.fac === 'braise' ? [1, 1.12, 1.25][t] : 1,
+    slow: c.fac === 'givre' ? [0, 0.2, 0.35][t] : 0,
+    steal: c.fac === 'ombre' ? [0, 0.1, 0.2][t] : 0,
   };
 }
 
 function applyStats(s, e) {
-  const c = CARD[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
+  const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
   e.maxHp = Math.round(c.hp * m.hp * lv * st);
-  e.dmg = c.dmg ? Math.round(c.dmg * m.dmg * lv * st) : 0;
-  e.hit = (c.hit || 1) / m.atk;
+  e.dmg = Math.round(c.dmg * m.dmg * lv * st);
+  e.hit = c.hit / m.atk;
   e.regen = m.regen;
-  e.r = (c.r || 0.5) * STAR_SIZE[e.star];
+  e.slowOn = Math.max(c.slow || 0, m.slow);
+  e.steal = (c.lifesteal || 0) + m.steal;
+  e.r = c.r * STAR_SIZE[e.star];
 }
 
-function spawn(s, p, cardId, x, y, lvl, deploy = DEPLOY_TIME) {
-  const c = CARD[cardId];
+function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
+  const c = HERO[id];
   const e = {
-    id: s.nextId++, p, kind: c.type === 'building' ? 'building' : 'unit', card: cardId, lvl: lvl || 1, star: 1,
-    x, y, px: x, py: y, hp: 0, maxHp: 0, cd: 0.3, spd: c.spd || 0, range: c.range || 0, tgt: c.tgt || 'ground',
-    fly: !!c.fly, splash: c.splash || 0, proj: c.proj || null, shield: c.shield || 0, frozen: 0,
-    deploy, target: 0, retarget: 0, dead: false, life: c.life || 0, sumT: c.summon ? c.summon.every : 0,
-    dashReady: !!c.dash, face: p === 0 ? -1 : 1, moving: false, atkAnim: 0,
+    id: s.nextId++, p, kind: c.type === 'building' ? 'building' : 'unit', card: id, lvl, star,
+    x, y, px: x, py: y, hp: 0, maxHp: 0, cd: 0.3, spd: c.spd || 0, range: c.range, tgt: c.tgt,
+    fly: !!c.fly, splash: c.splash || 0, proj: c.proj || null, shield: c.shield || 0, frozen: 0, slowT: 0,
+    deploy, target: 0, retarget: 0, dead: false, life: c.life || 0,
+    sumT: c.summon ? c.summon.every : 0, novaT: c.nova ? c.nova.every : 0,
+    dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1,
   };
   applyStats(s, e);
   e.hp = e.maxHp;
@@ -120,28 +170,14 @@ function spawn(s, p, cardId, x, y, lvl, deploy = DEPLOY_TIME) {
   return e;
 }
 
-function deploy(s, p, cardId, x, y) {
-  const P = s.players[p], c = CARD[cardId];
-  P.mana -= c.cost; P.spent += c.cost; P.played++;
-  const i = P.hand.indexOf(cardId);
-  P.queue.push(cardId);
-  P.hand[i] = P.queue.shift();
-  const lvl = P.levels[cardId] || 1;
-  s.ev.push({ type: 'deploy', p, card: cardId, x, y });
-
-  if (c.type === 'spell') {
-    const at = s.tick + Math.round((c.delay || 0) * TICK_RATE);
-    s.pend.push({ at, p, card: cardId, x, y, lvl });
-    if (c.delay) s.ev.push({ type: 'incoming', p, card: cardId, x, y, delay: c.delay });
-    return;
-  }
-  // Fusion : poser une troupe unique sur une troupe identique => elle monte d'une étoile.
-  if (c.type === 'unit' && c.count === 1) {
-    const twin = s.ents.find(e => !e.dead && e.p === p && e.card === cardId && e.star < MAX_STAR && dist(e, { x, y }) <= 1.6);
+function deployHero(s, p, h, x, y) {
+  const c = HERO[h.id], lvl = s.players[p].levels[h.id] || 1;
+  s.ev.push({ type: 'deploy', p, card: h.id, star: h.star, x, y });
+  // Fusion sur l'île : poser un héros sur un héros identique de même rang.
+  if (c.count === 1) {
+    const twin = s.ents.find(e => !e.dead && e.p === p && e.card === h.id && e.star === h.star && e.star < MAX_STAR && dist(e, { x, y }) <= 1.6);
     if (twin) {
-      twin.star++;
-      applyStats(s, twin);
-      twin.hp = twin.maxHp;
+      twin.star++; applyStats(s, twin); twin.hp = twin.maxHp;
       s.ev.push({ type: 'fuse', id: twin.id, star: twin.star, x: twin.x, y: twin.y });
       return;
     }
@@ -151,14 +187,12 @@ function deploy(s, p, cardId, x, y) {
     let ox = 0, oy = 0;
     if (n === 2) ox = k ? 0.5 : -0.5;
     if (n === 3) { ox = [-0.6, 0.6, 0][k]; oy = [0.3, 0.3, -0.5][k]; }
-    spawn(s, p, cardId, clampX(x + ox), y + oy, lvl);
+    const e = spawn(s, p, h.id, x + ox, y + oy, h.star, lvl);
+    clampIsland(e);
   }
 }
 
-const clampX = x => Math.max(0.4, Math.min(W - 0.4, x));
-
 // ---------- Dégâts ----------
-
 function damage(s, t, amount, src) {
   if (t.dead || amount <= 0) return;
   amount = Math.round(amount);
@@ -168,30 +202,25 @@ function damage(s, t, amount, src) {
     if (t.shield <= 0) s.ev.push({ type: 'shieldBreak', id: t.id });
   }
   t.hp -= amount;
-  s.ev.push({ type: 'hit', id: t.id, x: t.x, y: t.y, amount, src: src ? src.p : -1 });
+  s.ev.push({ type: 'hit', id: t.id, x: t.x, y: t.y, amount });
+  if (src && src.steal && src.hp > 0) src.hp = Math.min(src.maxHp, src.hp + amount * src.steal);
+  if (src && src.slowOn && t.kind === 'unit') t.slowT = Math.max(t.slowT, 2), t.slowK = Math.max(t.slowK || 0, src.slowOn);
   if (t.hp <= 0) kill(s, t);
 }
 
 function kill(s, t) {
   if (t.dead) return;
   t.dead = true; t.hp = 0;
-  s.ev.push({ type: 'die', id: t.id, kind: t.kind, sub: t.sub, card: t.card, p: t.p, x: t.x, y: t.y });
-  if (t.kind === 'tower') {
-    const o = s.players[1 - t.p];
-    if (t.sub === 'citadel') { o.crowns = 3; finish(s, 1 - t.p, 'citadel'); }
-    else {
-      o.crowns = Math.min(3, o.crowns + 1);
-      if (s.overtime) finish(s, 1 - t.p, 'overtime');
-    }
-  }
-  const c = t.card && CARD[t.card];
-  if (c && c.death) for (let k = 0; k < c.death.n; k++) spawn(s, t.p, c.death.id, clampX(t.x + (k ? 0.5 : -0.5)), t.y, t.lvl, 0.3);
+  s.ev.push({ type: 'die', id: t.id, kind: t.kind, card: t.card, p: t.p, x: t.x, y: t.y });
+  if (t.kind === 'sanct') return finish(s, 1 - t.p, 'sanct');
+  const c = t.card && HERO[t.card];
+  if (c && c.death) for (let k = 0; k < c.death.n; k++) { const e = spawn(s, t.p, c.death.id, t.x + (k ? 0.55 : -0.55), t.y, 1, t.lvl, 0.3); clampIsland(e); }
 }
 
-function areaDamage(s, p, x, y, radius, dmg, towerPct, src) {
+function areaDamage(s, p, x, y, radius, dmg, sanctPct, src) {
   for (const e of s.ents) {
     if (e.dead || e.p === p) continue;
-    if (dist(e, { x, y }) <= radius + e.r * 0.5) damage(s, e, e.kind === 'tower' ? dmg * towerPct : dmg, src);
+    if (dist(e, { x, y }) <= radius + e.r * 0.5) damage(s, e, e.kind === 'sanct' ? dmg * sanctPct : dmg, src);
   }
 }
 
@@ -201,15 +230,13 @@ function finish(s, winner, reason) {
   s.ev.push({ type: 'end', winner, reason });
 }
 
-// ---------- Ciblage et déplacement ----------
-
+// ---------- Ciblage ----------
 function canTarget(e, t) {
   if (t.dead || t.p === e.p) return false;
   if (e.tgt === 'buildings') return t.kind !== 'unit';
   if (e.tgt === 'ground' && t.fly) return false;
   return true;
 }
-
 const gap = (a, b) => dist(a, b) - a.r - b.r;
 
 function acquire(s, e) {
@@ -222,7 +249,6 @@ function acquire(s, e) {
     if (d <= sight && d < bd) { bd = d; best = t; }
   }
   if (!best && !isStatic) {
-    // Pas d'ennemi en vue : marcher vers le bâtiment ennemi le plus proche.
     for (const t of s.ents) {
       if (t.dead || t.p === e.p || t.kind === 'unit') continue;
       const d = dist(e, t);
@@ -232,81 +258,56 @@ function acquire(s, e) {
   return best;
 }
 
-function waypoint(e, tx, ty) {
-  if (e.fly) return { x: tx, y: ty };
-  const inBand = Math.abs(e.y - RIVER) <= 1.15;
-  if (!inBand && side(e.y) === side(ty)) return { x: tx, y: ty };
-  let bx = BRIDGES[0];
-  if (Math.abs(e.x - BRIDGES[1]) + Math.abs(tx - BRIDGES[1]) < Math.abs(e.x - BRIDGES[0]) + Math.abs(tx - BRIDGES[0])) bx = BRIDGES[1];
-  const dir = ty < RIVER ? -1 : 1;
-  if (inBand) {
-    if (Math.abs(e.x - bx) > 0.7) bx = Math.abs(e.x - BRIDGES[0]) < Math.abs(e.x - BRIDGES[1]) ? BRIDGES[0] : BRIDGES[1];
-    if (side(e.y) === side(ty) && Math.abs(e.y - RIVER) > 1.0) return { x: tx, y: ty };
-    return { x: bx, y: RIVER + dir * 1.4 };
-  }
-  return { x: bx, y: RIVER - dir * 1.1 };
-}
-
-function moveToward(e, gx, gy, dt) {
-  const dx = gx - e.x, dy = gy - e.y, d = Math.sqrt(dx * dx + dy * dy);
-  if (d < 1e-6) return;
-  const stepLen = Math.min(d, e.spd * dt);
-  e.x += dx / d * stepLen; e.y += dy / d * stepLen;
-  e.moving = true;
-  if (Math.abs(dx) > 0.05) e.faceX = dx > 0 ? 1 : -1;
-}
-
 function attack(s, e, t) {
-  const c = e.card ? CARD[e.card] : null;
-  e.atkAnim = 0.25;
+  const c = e.card ? HERO[e.card] : null;
+  e.atkAnim = 0.35;
   let dmg = e.dmg;
-  if (e.dashBonus) { dmg *= 2; e.dashBonus = false; }
-  s.ev.push({ type: 'attack', id: e.id, tid: t.id });
+  if (e.bonus) { dmg *= 2; e.bonus = false; }
+  s.ev.push({ type: 'attack', id: e.id, tid: t.id, x: e.x, y: e.y, tx: t.x, ty: t.y });
   if (c && c.kamikaze) {
     areaDamage(s, e.p, t.x, t.y, 0.9, dmg, 1, e);
-    s.ev.push({ type: 'boom', x: e.x, y: e.y, r: 0.9, color: 'fire' });
+    s.ev.push({ type: 'boom', x: e.x, y: e.y, r: 0.9, kind: 'fire' });
     kill(s, e);
     return;
   }
   if (c && c.chain) {
-    const pts = [{ x: e.x, y: e.y }], hitIds = new Set();
+    const pts = [{ x: e.x, y: e.y }], hit = new Set();
     let cur = t, d = dmg;
     for (let k = 0; k < c.chain && cur; k++) {
-      damage(s, cur, d, e); hitIds.add(cur.id); pts.push({ x: cur.x, y: cur.y });
+      damage(s, cur, d, e); hit.add(cur.id); pts.push({ x: cur.x, y: cur.y });
       d *= 0.75;
       let nb = null, nd = 2.6;
-      for (const o of s.ents) if (!hitIds.has(o.id) && canTarget(e, o)) { const dd = dist(cur, o); if (dd < nd) { nd = dd; nb = o; } }
+      for (const o of s.ents) if (!hit.has(o.id) && canTarget(e, o)) { const dd = dist(cur, o); if (dd < nd) { nd = dd; nb = o; } }
       cur = nb;
     }
     s.ev.push({ type: 'zap', pts });
     return;
   }
   if (e.proj) {
-    s.proj.push({ x: e.x, y: e.y - (e.fly ? 0.6 : 0.3), tid: t.id, tx: t.x, ty: t.y, spd: e.proj === 'fire' ? 8 : e.proj === 'arrow' ? 13 : 10,
-      dmg, splash: e.splash, p: e.p, kind: e.proj, src: e.id, fromTower: e.kind === 'tower' });
+    s.proj.push({ x: e.x, y: e.y, tid: t.id, tx: t.x, ty: t.y, spd: e.proj === 'fire' ? 8 : e.proj === 'arrow' ? 13 : 10,
+      dmg, splash: e.splash, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++ });
     return;
   }
-  if (e.splash) areaDamage(s, e.p, t.x, t.y, e.splash, dmg, 1, e);
+  if (e.splash) { areaDamage(s, e.p, t.x, t.y, e.splash, dmg, 1, e); s.ev.push({ type: 'cleave', x: t.x, y: t.y, r: e.splash, kind: c ? c.fac : '' }); }
   else damage(s, t, dmg, e);
 }
 
 // ---------- Boucle d'un tick ----------
-
 export function step(s, cmds = []) {
   if (s.over) return s;
   s.ev = [];
   for (const cm of cmds) {
-    const err = canPlay(s, cm.p, cm.card, cm.x, cm.y);
+    const err = check(s, cm);
     if (err) { s.ev.push({ type: 'reject', p: cm.p, err }); continue; }
-    deploy(s, cm.p, cm.card, cm.x, cm.y);
+    apply(s, cm);
   }
-
   const dt = DT;
-  // Éther
-  const rate = (s.t >= DOUBLE_AT ? 2 : 1) / MANA_REGEN;
-  for (const P of s.players) P.mana = Math.min(MANA_MAX, P.mana + rate * dt);
-
-  // Sorts en attente
+  updateHeart(s, dt);
+  for (const [p, P] of s.players.entries()) {
+    const bonus = s.heart.owner === p ? 1.5 : 1;
+    P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT ? 2 : 1) * bonus / MANA_REGEN * dt);
+    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 2 : 1) * dt);
+  }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
   s.pend = s.pend.filter(sp => sp.at > s.tick);
 
@@ -316,81 +317,99 @@ export function step(s, cmds = []) {
     if (e.dead) continue;
     if (e.atkAnim > 0) e.atkAnim -= dt;
     if (e.frozen > 0) { e.frozen -= dt; continue; }
-    if (e.deploy > 0) {
-      e.deploy -= dt;
-      if (e.deploy <= 0) onLand(s, e);
-      continue;
-    }
-    const c = e.card ? CARD[e.card] : null;
+    if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowK = 0; }
+    if (e.deploy > 0) { e.deploy -= dt; if (e.deploy <= 0) onLand(s, e); continue; }
+    const c = e.card ? HERO[e.card] : null;
     if (e.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regen * dt);
     if (e.kind === 'building' && e.life) { e.hp -= e.maxHp / e.life * dt; if (e.hp <= 0) { kill(s, e); continue; } }
-    if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) o.hp = Math.min(o.maxHp, o.hp + c.aura.heal * dt);
+    if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) o.hp = Math.min(o.maxHp, o.hp + c.aura.heal * STAR_MULT[e.star] * dt);
     if (c && c.summon) {
       e.sumT -= dt;
       if (e.sumT <= 0) {
         e.sumT = c.summon.every;
-        for (let k = 0; k < c.summon.n; k++) spawn(s, e.p, c.summon.id, clampX(e.x + (k ? 0.7 : -0.7)), e.y + (e.p === 0 ? 0.4 : -0.4), e.lvl, 0.5);
-        s.ev.push({ type: 'summon', x: e.x, y: e.y });
+        for (let k = 0; k < c.summon.n; k++) { const m = spawn(s, e.p, c.summon.id, e.x + (k ? 0.7 : -0.7), e.y + (e.p === 0 ? 0.5 : -0.5), 1, e.lvl, 0.6); clampIsland(m); }
+        s.ev.push({ type: 'conjure', id: e.id, x: e.x, y: e.y, fac: c.fac });
+      }
+    }
+    if (c && c.nova) {
+      e.novaT -= dt;
+      if (e.novaT <= 0) {
+        let any = false;
+        for (const o of s.ents) if (!o.dead && o.p !== e.p && o.kind === 'unit' && dist(o, e) <= c.nova.radius) any = true;
+        if (any) {
+          e.novaT = c.nova.every;
+          for (const o of s.ents) if (!o.dead && o.p !== e.p && o.kind === 'unit' && dist(o, e) <= c.nova.radius) o.frozen = Math.max(o.frozen, c.nova.freeze);
+          s.ev.push({ type: 'nova', id: e.id, x: e.x, y: e.y, r: c.nova.radius });
+        } else e.novaT = 0.5;
       }
     }
 
-    // Cible
     let t = e.target ? s.ents.find(o => o.id === e.target) : null;
     e.retarget -= dt;
     if (!t || t.dead || !canTarget(e, t) || e.retarget <= 0 || (e.kind !== 'unit' && gap(e, t) > e.range)) {
-      const n = acquire(s, e);
-      e.retarget = 0.25;
-      t = n; e.target = n ? n.id : 0;
+      t = acquire(s, e); e.retarget = 0.25; e.target = t ? t.id : 0;
     }
-    if (e.cd > 0) e.cd -= dt;
+    if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1);
     if (!t) continue;
-
+    const dx = t.x - e.x, dy = t.y - e.y, dd = Math.sqrt(dx * dx + dy * dy) || 1;
+    e.faceX = dx / dd; e.faceY = dy / dd;
     const g = gap(e, t);
     if (g <= e.range) {
-      if (t.x !== e.x) e.faceX = t.x > e.x ? 1 : -1;
+      if (e.chargeReady) { e.chargeReady = false; e.bonus = true; }
       if (e.cd <= 0) { attack(s, e, t); e.cd = e.hit; }
     } else if (e.kind === 'unit') {
-      if (e.dashReady && c && c.dash && g <= c.dash && g > 1.2) {
-        const d = dist(e, t), k = (d - e.r - t.r - 0.3) / d;
-        s.ev.push({ type: 'dash', x0: e.x, y0: e.y, x1: e.x + (t.x - e.x) * k, y1: e.y + (t.y - e.y) * k });
-        e.x += (t.x - e.x) * k; e.y += (t.y - e.y) * k;
-        e.dashReady = false; e.dashBonus = true; e.cd = 0;
+      if (e.dashReady && c.dash && g <= c.dash && g > 1.2) {
+        const k = (dd - e.r - t.r - 0.3) / dd;
+        s.ev.push({ type: 'dash', id: e.id, x0: e.x, y0: e.y, x1: e.x + dx * k, y1: e.y + dy * k });
+        e.x += dx * k; e.y += dy * k; e.dashReady = false; e.bonus = true; e.cd = 0;
         continue;
       }
-      const w = waypoint(e, t.x, t.y);
-      moveToward(e, w.x, w.y, dt);
+      const sp = e.spd * (e.slowK ? 1 - e.slowK : 1) * (e.chargeReady && dd < 6 ? 1.8 : 1);
+      const stp = Math.min(dd, sp * dt);
+      e.x += dx / dd * stp; e.y += dy / dd * stp; e.moving = true;
     }
   }
 
   updateProjectiles(s, dt);
   separate(s);
-
-  // Retirer les morts
-  s.ents = s.ents.filter(e => !e.dead || e.kind === 'tower');
-
+  s.ents = s.ents.filter(e => !e.dead || e.kind === 'sanct');
   s.tick++;
   s.t = s.tick * DT;
   checkTime(s);
   return s;
 }
 
+function updateHeart(s, dt) {
+  let a = 0, b = 0;
+  for (const e of s.ents) if (!e.dead && e.kind === 'unit' && e.deploy <= 0 && dist(e, HEART) <= HEART.r) { if (e.p === 0) a++; else b++; }
+  const H0 = s.heart, before = H0.owner;
+  if (a && !b) H0.ctl = Math.min(1, H0.ctl + HEART.rate * dt);
+  else if (b && !a) H0.ctl = Math.max(-1, H0.ctl - HEART.rate * dt);
+  if (H0.ctl >= 0.999) H0.owner = 0;
+  else if (H0.ctl <= -0.999) H0.owner = 1;
+  else if ((H0.owner === 0 && H0.ctl <= 0) || (H0.owner === 1 && H0.ctl >= 0)) H0.owner = -1;
+  if (H0.owner !== before) s.ev.push({ type: 'heart', owner: H0.owner });
+}
+
 function onLand(s, e) {
-  const c = CARD[e.card];
+  const c = HERO[e.card];
   s.ev.push({ type: 'land', id: e.id, x: e.x, y: e.y });
   if (c && c.roar) {
     areaDamage(s, e.p, e.x, e.y, c.roar.radius, c.roar.dmg * STAR_MULT[e.star], 0.3, e);
-    s.ev.push({ type: 'boom', x: e.x, y: e.y, r: c.roar.radius, color: 'fire' });
+    s.ev.push({ type: 'boom', x: e.x, y: e.y, r: c.roar.radius, kind: 'roar' });
   }
 }
 
 function castSpell(s, sp) {
-  const c = CARD[sp.card], m = mults(s, sp.p, c), lv = levelMult(sp.lvl);
-  s.ev.push({ type: 'spell', card: sp.card, fx: c.fx, x: sp.x, y: sp.y, r: c.radius, p: sp.p });
-  if (c.dmg) areaDamage(s, sp.p, sp.x, sp.y, c.radius, c.dmg * m.dmg * lv, c.towerPct || 0.35, { p: sp.p });
-  if (c.freeze) for (const e of s.ents) if (!e.dead && e.p !== sp.p && dist(e, sp) <= c.radius + e.r * 0.5) e.frozen = Math.max(e.frozen, c.freeze);
-  if (c.heal) for (const e of s.ents) if (!e.dead && e.p === sp.p && e.kind !== 'tower' && dist(e, sp) <= c.radius + e.r * 0.5) {
-    e.hp = Math.min(e.maxHp, e.hp + c.heal * lv);
-    e.shield += Math.round((c.shieldAdd || 0) * lv);
+  const c = SPELL[sp.spell], lv = 1, m = { dmg: 1 };
+  let x = sp.x, y = sp.y;
+  if (c.strikes) { const o = [[0, 0], [-1, 0.8], [1, -0.7]][sp.k % 3]; x += o[0]; y += o[1]; }
+  s.ev.push({ type: 'spell', spell: sp.spell, fx: c.fx, x, y, r: c.strikes ? c.radius * 0.6 : c.radius, p: sp.p });
+  const r = c.strikes ? c.radius * 0.6 : c.radius;
+  if (c.dmg) areaDamage(s, sp.p, x, y, r, c.dmg * m.dmg * lv, c.sanctPct || 0.3, null);
+  if (c.freeze) for (const e of s.ents) if (!e.dead && e.p !== sp.p && dist(e, { x, y }) <= r + e.r * 0.5) e.frozen = Math.max(e.frozen, c.freeze);
+  if (c.heal) for (const e of s.ents) if (!e.dead && e.p === sp.p && e.kind !== 'sanct' && dist(e, { x, y }) <= r + e.r * 0.5) {
+    e.hp = Math.min(e.maxHp, e.hp + c.heal * lv); e.shield += Math.round(c.shieldAdd * lv);
   }
 }
 
@@ -401,10 +420,9 @@ function updateProjectiles(s, dt) {
     const dx = pr.tx - pr.x, dy = pr.ty - pr.y, d = Math.sqrt(dx * dx + dy * dy), stp = pr.spd * dt;
     if (d <= stp + 0.15) {
       pr.done = true;
-      if (pr.splash) {
-        areaDamage(s, pr.p, pr.tx, pr.ty, pr.splash, pr.dmg, 1, pr);
-        s.ev.push({ type: 'boom', x: pr.tx, y: pr.ty, r: pr.splash, color: pr.kind });
-      } else if (t) damage(s, t, pr.dmg, pr);
+      const src = s.ents.find(o => o.id === pr.src) || { p: pr.p };
+      if (pr.splash) { areaDamage(s, pr.p, pr.tx, pr.ty, pr.splash, pr.dmg, 1, src); s.ev.push({ type: 'boom', x: pr.tx, y: pr.ty, r: pr.splash, kind: pr.kind }); }
+      else if (t) damage(s, t, pr.dmg, src);
       s.ev.push({ type: 'impact', x: pr.tx, y: pr.ty, kind: pr.kind });
     } else { pr.x += dx / d * stp; pr.y += dy / d * stp; }
   }
@@ -423,54 +441,35 @@ function separate(s) {
       const dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy, min = (a.r + b.r) * 0.9;
       if (d2 >= min * min) continue;
       let d = Math.sqrt(d2), nx = 1, ny = 0;
-      if (d > 1e-6) { nx = dx / d; ny = dy / d; } else { nx = (a.id % 2 ? 1 : -1); d = 0; }
-      const push = (min - d);
+      if (d > 1e-6) { nx = dx / d; ny = dy / d; } else { nx = a.id % 2 ? 1 : -1; d = 0; }
+      const push = min - d;
       if (am && bm) { a.x -= nx * push / 2; a.y -= ny * push / 2; b.x += nx * push / 2; b.y += ny * push / 2; }
       else if (am) { a.x -= nx * push; a.y -= ny * push; }
       else { b.x += nx * push; b.y += ny * push; }
     }
   }
-  for (const e of L) {
-    if (e.kind !== 'unit') continue;
-    e.x = clampX(e.x); e.y = Math.max(0.4, Math.min(H - 0.4, e.y));
-    if (!e.fly && Math.abs(e.y - RIVER) < 1.0 && BRIDGES.every(b => Math.abs(e.x - b) > 0.75)) {
-      // Pas dans la rivière : retour sur la berge.
-      e.y = e.py !== undefined && Math.abs(e.py - RIVER) >= 1.0 ? e.py : (e.y < RIVER ? RIVER - 1.0 : RIVER + 1.0);
-    }
-  }
+  for (const e of L) if (e.kind === 'unit') clampIsland(e);
 }
 
-function towerHpRatio(s, p) {
-  let hp = 0, mx = 0;
-  for (const e of s.ents) if (e.kind === 'tower' && e.p === p) { hp += Math.max(0, e.hp); mx += e.maxHp; }
-  return hp / mx;
-}
-
+const ratio = (s, p) => { const e = sanctOf(s, p); return Math.max(0, e.hp) / e.maxHp; };
 function checkTime(s) {
   if (s.over) return;
-  const [a, b] = s.players;
+  const a = ratio(s, 0), b = ratio(s, 1);
   if (s.t >= MATCH_TIME && !s.overtime) {
-    if (a.crowns !== b.crowns) return finish(s, a.crowns > b.crowns ? 0 : 1, 'time');
-    s.overtime = true;
-    s.ev.push({ type: 'overtime' });
+    if (Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'time');
+    s.overtime = true; s.ev.push({ type: 'overtime' });
   }
-  if (s.t >= MATCH_TIME + OVERTIME) {
-    const ra = towerHpRatio(s, 0), rb = towerHpRatio(s, 1);
-    if (Math.abs(ra - rb) < 0.001) finish(s, -1, 'draw');
-    else finish(s, ra > rb ? 0 : 1, 'towerhp');
-  }
+  if (s.overtime && Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'overtime');
+  if (s.t >= MATCH_TIME + OVERTIME) finish(s, -1, 'draw');
 }
 
-export function timeLeft(s) {
-  return s.overtime ? MATCH_TIME + OVERTIME - s.t : MATCH_TIME - s.t;
-}
+export function timeLeft(s) { return s.overtime ? MATCH_TIME + OVERTIME - s.t : MATCH_TIME - s.t; }
 
-// Empreinte de l'état : sert aux tests et, plus tard, à vérifier la synchronisation client/serveur.
 export function hashState(s) {
   let h = 2166136261;
   const add = n => { h ^= Math.round(n * 1000) | 0; h = Math.imul(h, 16777619) >>> 0; };
   add(s.tick);
   for (const e of s.ents) { add(e.id); add(e.x); add(e.y); add(e.hp); }
-  for (const P of s.players) { add(P.mana); add(P.crowns); }
+  for (const P of s.players) { add(P.mana); add(P.eveil); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
 }
