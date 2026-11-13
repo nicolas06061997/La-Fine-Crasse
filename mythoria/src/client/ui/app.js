@@ -334,7 +334,8 @@ function openHowTo() {
       h('li', {}, h('b', {}, 'Invoquer : '), 'le bouton « Invoquer » (2 éther) fait apparaître un héros au hasard de ton deck sur ton Cercle d’Invocation (5 places, devant l’île). Les héros rares sortent moins souvent.'),
       h('li', {}, h('b', {}, 'Fusionner : '), 'glisse un héros sur un héros identique de même rang : il évolue en ★2, puis ★3 (beaucoup plus fort).'),
       h('li', {}, h('b', {}, 'Envoyer au combat : '), 'glisse un héros du Cercle vers ta moitié de l’île (zone bleue). Il se bat tout seul.'),
-      h('li', {}, h('b', {}, 'Cœur de Mythe : '), 'le cristal au centre. Si tu es seul à côté, tu le captures : +50 % d’éther et jauge d’Éveil 2× plus rapide.'),
+      h('li', {}, h('b', {}, 'Cœur de Mythe : '), 'le cristal au centre. Si tes héros au sol sont seuls à côté, tu le captures : +35 % d’éther et jauge d’Éveil plus rapide. Les volants ne capturent pas.'),
+      h('li', {}, h('b', {}, 'Volants : '), 'les tirs à distance (archers, mages, tours) leur font +35 % de dégâts.'),
       h('li', {}, h('b', {}, 'Sortilège : '), 'quand la jauge d’Éveil est pleine, touche le bouton rond à gauche puis l’île.'),
       h('li', {}, h('b', {}, 'Synergies : '), '3 héros d’une même faction dans ton deck = bonus, 5 = gros bonus.')),
     h('p', { class: 'muted' }, 'Astuce : garde deux places libres sur ton Cercle pour pouvoir fusionner.')));

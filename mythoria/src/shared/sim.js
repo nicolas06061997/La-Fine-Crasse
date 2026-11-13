@@ -134,12 +134,12 @@ function apply(s, cm) {
 function mults(s, p, c) {
   const t = s.players[p].syn[c.fac] || 0;
   return {
-    hp: c.fac === 'aube' ? [1, 1.12, 1.25][t] : 1,
-    dmg: c.fac === 'arcane' ? [1, 1.15, 1.3][t] : 1,
-    regen: c.fac === 'sylve' ? [0, 0.02, 0.04][t] : 0,
-    atk: c.fac === 'braise' ? [1, 1.12, 1.25][t] : 1,
-    slow: c.fac === 'givre' ? [0, 0.2, 0.35][t] : 0,
-    steal: c.fac === 'ombre' ? [0, 0.1, 0.2][t] : 0,
+    hp: c.fac === 'aube' ? [1, 1.08, 1.15][t] : 1,
+    dmg: c.fac === 'arcane' ? [1, 1.08, 1.16][t] : 1,
+    regen: c.fac === 'sylve' ? [0, 0.012, 0.025][t] : 0,
+    atk: c.fac === 'braise' ? [1, 1.07, 1.14][t] : 1,
+    slow: c.fac === 'givre' ? [0, 0.15, 0.25][t] : 0,
+    steal: c.fac === 'ombre' ? [0, 0.08, 0.15][t] : 0,
   };
 }
 
@@ -187,6 +187,7 @@ function deployHero(s, p, h, x, y) {
     let ox = 0, oy = 0;
     if (n === 2) ox = k ? 0.5 : -0.5;
     if (n === 3) { ox = [-0.6, 0.6, 0][k]; oy = [0.3, 0.3, -0.5][k]; }
+    if (n === 4) { ox = [-0.5, 0.5, -0.5, 0.5][k]; oy = [0.4, 0.4, -0.4, -0.4][k]; }
     const e = spawn(s, p, h.id, x + ox, y + oy, h.star, lvl);
     clampIsland(e);
   }
@@ -195,6 +196,7 @@ function deployHero(s, p, h, x, y) {
 // ---------- Dégâts ----------
 function damage(s, t, amount, src) {
   if (t.dead || amount <= 0) return;
+  if (t.fly && src && src.proj) amount *= 1.35; // les tirs à distance sont efficaces contre les volants
   amount = Math.round(amount);
   if (t.shield > 0) {
     const a = Math.min(t.shield, amount);
@@ -309,9 +311,9 @@ export function step(s, cmds = []) {
   const dt = DT;
   updateHeart(s, dt);
   for (const [p, P] of s.players.entries()) {
-    const bonus = s.heart.owner === p ? 1.5 : 1;
+    const bonus = s.heart.owner === p ? 1.35 : 1;
     P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT ? 2 : 1) * bonus / MANA_REGEN * dt);
-    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 2 : 1) * dt);
+    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
   s.pend = s.pend.filter(sp => sp.at > s.tick);
@@ -386,7 +388,7 @@ export function step(s, cmds = []) {
 
 function updateHeart(s, dt) {
   let a = 0, b = 0;
-  for (const e of s.ents) if (!e.dead && e.kind === 'unit' && e.deploy <= 0 && dist(e, HEART) <= HEART.r) { if (e.p === 0) a++; else b++; }
+  for (const e of s.ents) if (!e.dead && e.kind === 'unit' && !e.fly && e.deploy <= 0 && dist(e, HEART) <= HEART.r) { if (e.p === 0) a++; else b++; }
   const H0 = s.heart, before = H0.owner;
   if (a && !b) H0.ctl = Math.min(1, H0.ctl + HEART.rate * dt);
   else if (b && !a) H0.ctl = Math.max(-1, H0.ctl - HEART.rate * dt);
