@@ -44,7 +44,8 @@ export async function preload(ids, onProgress) {
   await Promise.all(files.map(f => loadGLB(f).then(() => onProgress && onProgress(++n / files.length))));
 }
 
-const HEIGHT = 2.1; // taille de référence d'un héros (en cases)
+const HEIGHT = 2.1;
+const FILTERED = new Map(); // taille de référence d'un héros (en cases)
 const tmpBox = new THREE.Box3();
 
 // Objet commun renvoyé pour tous les héros : { root, play(state), update(dt), flash(), height }
@@ -173,7 +174,14 @@ export async function makeHero(id, { star = 1 } = {}) {
   }
   normalize(root, HEIGHT);
   root.scale.multiplyScalar(size);
-  const clips = await heroClips();
+  let clips = await heroClips();
+  // Squelette simplifié (ex. Ranger 2.0) : on retire les pistes d'animation des os absents.
+  if (!FILTERED.has(m.glb)) {
+    const names = new Set(); root.traverse(o => names.add(o.name));
+    const missing = Object.values(clips).some(c => c.tracks.some(t => !names.has(t.name.split('.')[0])));
+    FILTERED.set(m.glb, missing ? Object.fromEntries(Object.entries(clips).map(([k, c]) => [k, new THREE.AnimationClip(c.name, c.duration, c.tracks.filter(t => names.has(t.name.split('.')[0])))])) : null);
+  }
+  clips = FILTERED.get(m.glb) || clips;
   const skel = m.glb.startsWith('Skeleton');
   const a = new SkinnedActor(root, HEIGHT * size, clips, {
     idle: m.idle || (skel ? 'Idle_Combat' : 'Idle'), run: 'Running_A', walk: skel ? 'Walking_D_Skeletons' : 'Walking_A',

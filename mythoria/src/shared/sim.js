@@ -284,6 +284,11 @@ function attack(s, e, t) {
     return;
   }
   if (e.proj) {
+    if (c && c.multi) {
+      // Volée : jusqu'à `multi` cibles différentes à portée
+      const others = s.ents.filter(o => o !== t && canTarget(e, o) && gap(e, o) <= e.range).sort((a, b) => dist(e, a) - dist(e, b)).slice(0, c.multi - 1);
+      for (const o of others) s.proj.push({ x: e.x, y: e.y, tid: o.id, tx: o.x, ty: o.y, spd: 13, dmg, splash: 0, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++ });
+    }
     s.proj.push({ x: e.x, y: e.y, tid: t.id, tx: t.x, ty: t.y, spd: e.proj === 'fire' ? 8 : e.proj === 'arrow' ? 13 : 10,
       dmg, splash: e.splash, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++ });
     return;

@@ -93,6 +93,11 @@ export const HEROES = [
     model: { beast: 'Stag', scale: 0.75, tint: '#d9ffe0', glow: '#5fd38d' },
     lore: 'L’esprit de la forêt en personne. Là où il passe, les fleurs repoussent.',
     ability: ['Charge sylvestre', 'Fonce vers le Sanctuaire ennemi ; son premier coup fait double dégâts.'] },
+  { id: 'elwyn', name: 'Elwyn', title: 'Rôdeur des Cimes', fac: 'sylve', rar: 'epique', type: 'unit',
+    hp: 620, dmg: 78, hit: 1.15, spd: 1.25, range: 6, tgt: 'any', count: 1, r: 0.45, proj: 'arrow', multi: 3,
+    model: { glb: 'Ranger', add: [['Bow', 'handslot.l']], scale: 1.0, glow: '#5fd38d', atk: ['2H_Ranged_Shoot', '1H_Ranged_Shoot'] },
+    lore: 'Gardien des plus hauts arbres de la Sylve. On dit qu’il peut toucher une feuille qui tombe à cent pas.',
+    ability: ['Volée de flèches', 'Tire sur 3 ennemis à la fois, de très loin.'] },
   { id: 'myra', name: 'Myra', title: 'Sorcière des Ronces', fac: 'sylve', rar: 'epique', type: 'unit',
     hp: 840, dmg: 110, hit: 1.2, spd: 1.0, range: 4.5, tgt: 'any', count: 1, r: 0.5, proj: 'thorn',
     summon: { id: 'pousse', every: 7, n: 2 },
@@ -220,7 +225,7 @@ export const DECK_SIZE = 8;
 // Déblocage : chaque monde débloque les héros de sa faction (et le neutre au départ).
 export const UNLOCKS = {
   0: ['ecuyer', 'frere', 'archeres', 'loups', 'apprenti', 'brann', 'jarl', 'squelettes', 'belier', 'osseuse', 'follets', 'solenne'],
-  1: ['myra', 'cerf', 'golem'],
+  1: ['myra', 'cerf', 'golem', 'elwyn'],
   2: ['tourelle', 'vael'],
   3: ['dragonnet', 'kaelis', 'ignar'],
   4: ['frimas', 'nevra'],
