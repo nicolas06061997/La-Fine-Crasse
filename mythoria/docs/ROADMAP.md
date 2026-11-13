@@ -3,7 +3,7 @@
 | Phase | Contenu | État |
 |---|---|---|
 | 1. Fondation | Architecture, identité visuelle, menus, interface mobile | ✅ |
-| 2. Premier vrai jeu | Refonte 3D : 22 héros animés, 6 factions/mondes, invocation, fusion ★3, Cœur de Mythe, sortilèges, IA 5 niveaux, récompenses | ✅ (contre l'IA) |
+| 2. Premier vrai jeu | Refonte 3D : 26 héros animés, 6 factions/mondes, invocation, fusion ★3, Cœur de Mythe, sortilèges, IA 5 niveaux, récompenses | ✅ (contre l'IA) |
 | 3. Multijoueur | Comptes, serveur, matchmaking, vrais adversaires, sauvegarde en ligne, reconnexion | ⏳ Prochaine |
 | 4. Royaume | Ton île : construction, ressources, améliorations, défense | |
 | 5. Progression | Niveaux permanents des héros, apparences, coffres, boutique équitable, missions | |

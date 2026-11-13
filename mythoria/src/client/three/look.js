@@ -31,7 +31,7 @@ const OUTLINE_MATS = new Map();
 function outlineMat(color, thick) {
   const key = color + ':' + thick.toFixed(4);
   if (OUTLINE_MATS.has(key)) return OUTLINE_MATS.get(key);
-  const m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+  const m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide }); m.userData.isOutlineMat = true;
   m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = vec3(position) + normal * ${thick.toFixed(5)};`); };
   m.customProgramCacheKey = () => 'ol' + key;
   OUTLINE_MATS.set(key, m);

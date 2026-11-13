@@ -71,7 +71,7 @@ function runeTexture(col) {
   g.strokeStyle = col; g.lineWidth = 5; g.lineCap = 'round'; g.shadowColor = col; g.shadowBlur = 8;
   g.beginPath(); g.arc(32, 32, 24, 0, Math.PI * 2); g.stroke();
   g.beginPath(); g.moveTo(32, 14); g.lineTo(20, 46); g.lineTo(44, 46); g.closePath(); g.moveTo(32, 14); g.lineTo(32, 50); g.stroke();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.own = true; return t;
 }
 
 // Ajoute les effets d'un héros. actor : objet renvoyé par makeHero. Renvoie update(dt, t, state).

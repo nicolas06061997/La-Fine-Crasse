@@ -14,7 +14,10 @@ const BASE = 'assets/models/';
 const loader = new GLTFLoader();
 const cache = new Map();
 export function loadGLB(path) {
-  if (!cache.has(path)) cache.set(path, new Promise((ok, ko) => loader.load(BASE + path, ok, undefined, ko)));
+  if (!cache.has(path)) cache.set(path, new Promise((ok, ko) => loader.load(BASE + path, g => {
+    g.scene.traverse(o => { if (o.geometry) o.geometry.userData.shared = true; if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.userData.shared = true; }); });
+    ok(g);
+  }, undefined, ko)));
   return cache.get(path);
 }
 
@@ -209,7 +212,19 @@ export async function makeHero(id, opts = {}) {
   let t = Math.random() * 10;
   const proc = !!m.proc && opts.outline !== false;
   a.update = dt => { orig(dt); t += dt; if (fx) fx(dt, t, a.state); if (proc) syncOutlines(a.root); };
+  // Libère vraiment la mémoire de la carte graphique (sauf ce qui est partagé entre héros).
+  const baseDispose = a.dispose.bind(a);
+  a.dispose = () => { baseDispose(); if (a.holder) freeTree(a.holder); };
   return a;
+}
+
+export function freeTree(root) {
+  root.traverse(o => {
+    if (o.isSkinnedMesh && o.skeleton) o.skeleton.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map && m.map.userData.own) m.map.dispose(); });
+    if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (!m.userData.shared && !m.userData.isOutlineMat) m.dispose(); });
+  });
 }
 
 // Décor (arbres, rochers, temples…)

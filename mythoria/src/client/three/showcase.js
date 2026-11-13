@@ -42,7 +42,7 @@ export class Showcase {
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
   }
   async setHero(id, star = 1) {
-    const my = (this.req = (this.req || 0) + 1);
+    const my = (this.req = (this.req || 0) + 1); this.heroId = id;
     await preload([id]);
     const a = await makeHero(id, { star });
     if (my !== this.req || this.dead) { a.dispose(); return; }
