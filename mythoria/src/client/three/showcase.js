@@ -1,9 +1,10 @@
 // MYTHORIA — 3D des menus : vitrine d'un héros (tourne, joue ses animations) et portraits
 // fabriqués à partir des vrais modèles 3D (pour la collection).
 import * as THREE from 'three';
-import { createRenderer } from './stage.js';
+import { createRenderer, quality } from './stage.js';
 import { makeHero, preload, prop } from './assets.js';
-import { THEMES } from './world.js';
+import { THEMES, skyDome } from './world.js';
+import { createComposer, blobShadow } from './look.js';
 import { glowSprite } from './procedural.js';
 import { HERO, RARITIES } from '../../shared/content.js';
 
@@ -11,12 +12,13 @@ import { HERO, RARITIES } from '../../shared/content.js';
 export class Showcase {
   constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero' } = {}) {
     this.cv = canvas; this.mode = mode;
-    this.r = createRenderer(canvas, { alpha: true });
-    this.r.setClearColor(0x000000, 0);
+    this.r = createRenderer(canvas);
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
+    this.sky = skyDome(mode === 'home' ? T : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: !quality().low, strength: 0.45, threshold: 1.1, radius: 0.5 });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 4, bottom: -2, near: 0.5, far: 20 }); this.scene.add(sun);
@@ -45,8 +47,9 @@ export class Showcase {
     const a = await makeHero(id, { star });
     if (my !== this.req || this.dead) { a.dispose(); return; }
     if (this.actor) { this.base.remove(this.actor.holder); this.actor.dispose(); }
-    this.actor = a; a.play('idle'); a.back = 'idle'; this.base.add(a.holder);
+    this.actor = a; a.play('idle'); a.back = 'idle'; this.base.add(a.holder); a.holder.add(blobShadow(1.4));
     const c = HERO[id];
+    if (this.mode !== 'home') { const R = new THREE.Color(RARITIES[c.rar].color); this.sky.material.uniforms.top.value.copy(R.clone().multiplyScalar(0.45)); }
     this.ring.material.color.set(RARITIES[c.rar].color);
     this.glow.material.color.set(c.model.glow || RARITIES[c.rar].color);
     this.frame();
@@ -61,7 +64,7 @@ export class Showcase {
   }
   resize() {
     const w = this.cv.clientWidth || 1, h = this.cv.clientHeight || 1;
-    this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix();
+    this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); if (this.post) this.post.setSize(w, h);
   }
   bindDrag() {
     let x0 = null;
@@ -79,7 +82,7 @@ export class Showcase {
     this.base.position.y = Math.sin(this.t * 1.2) * 0.05;
     this.ring.rotation.z += dt * 0.5;
     if (this.actor) this.actor.update(dt);
-    this.r.render(this.scene, this.cam);
+    this.post.render();
   }
   dispose() {
     this.dead = true; cancelAnimationFrame(this.raf); this.ro.disconnect();

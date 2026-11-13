@@ -12,6 +12,12 @@
 - **6 mondes** = 6 factions : Royaume d'Aurore (Aube), Sylve Enchantée, Académie Arcane, Pics des Dragons (Braise),
   Terres de Givre, Royaume des Ombres. Chaque monde : ciel, lumière, sol peint, décor, particules d'ambiance, adversaires.
 
+## Rendu « style jeu de stratégie moderne » (look.js, herofx.js)
+- Lumière de contour (rim light) sur chaque héros, contour sombre (coque inversée, marche sur les modèles animés).
+- Halo lumineux (bloom, désactivé sur les petits téléphones) + étalonnage (saturation, contraste, vignette).
+- Ombre de contact sous les pieds. Effets propres à chaque héros (`HERO_FX`) : ailes de lumière, auréole, runes,
+  couronnes, braises, neige, feuilles, fumée d'ombre, armes lumineuses, sceau au sol des héros légendaires.
+
 ## Choix techniques
 | Besoin | Choix | Pourquoi |
 |---|---|---|

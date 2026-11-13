@@ -299,7 +299,7 @@ export function heartOfMyth() {
     // anneau = progression du contrôle
     const k = Math.max(0.02, Math.abs(ctl));
     if (Math.abs(k - lastK) > 0.01) { lastK = k; ring.geometry.dispose(); ring.geometry = new THREE.RingGeometry(2.15, 2.4, 64, 1, Math.PI / 2, Math.PI * 2 * k); }
-    beam.material.opacity = owner >= 0 ? 0.13 + Math.sin(t * 3) * 0.03 : 0.03;
+    beam.material.opacity = owner >= 0 ? 0.07 + Math.sin(t * 3) * 0.02 : 0.02;
     halo.scale.setScalar(2 + Math.sin(t * 2.5) * 0.2 + (owner >= 0 ? 0.6 : 0));
   } };
 }

@@ -7,6 +7,7 @@ import { buildWorld } from './world.js';
 import { makeHero, preload, prop } from './assets.js';
 import { sanctuaryCrystal, heartOfMyth, glowSprite } from './procedural.js';
 import { FX } from './fx.js';
+import { createComposer, blobShadow } from './look.js';
 
 export const TEAM = ['#3da9ff', '#ff4f5e'];
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
@@ -75,12 +76,14 @@ export class BattleView {
     this.scene.add(this.zone);
     this.aim = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
     this.aim.rotation.x = -Math.PI / 2; this.aim.position.y = 0.09; this.aim.visible = false; this.scene.add(this.aim);
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: !this.q.low, strength: 0.45, threshold: 1.15, radius: 0.45 });
     this.resize();
   }
 
   resize() {
     const w = this.cv.clientWidth || 1, h = this.cv.clientHeight || 1;
     this.r.setSize(w, h, false);
+    if (this.post) this.post.setSize(w, h);
     const d = Math.min(2, devicePixelRatio || 1);
     this.ov.width = w * d; this.ov.height = h * d; this.ow = w; this.oh = h; this.od = d;
     this.cam.aspect = w / h;
@@ -131,7 +134,7 @@ export class BattleView {
     const key = g.id + g.star;
     if (!this.ghost || this.ghost.key !== key) {
       if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); }
-      const a = await makeHero(g.id, { star: g.star }); a.setOpacity(0.6); a.play('idle');
+      const a = await makeHero(g.id, { star: g.star, outline: false, fx: false }); a.setOpacity(0.6); a.play('idle');
       this.ghost = { a, key }; this.scene.add(a.holder);
     }
     const w = this.toWorld(g.x, g.y);
@@ -196,8 +199,9 @@ export class BattleView {
   async ensureView(e) {
     const v = { pending: true, ring: null, actor: null };
     this.views.set(e.id, v);
-    const a = await makeHero(e.card, { star: e.star });
+    const a = await makeHero(e.card, { star: e.star, lite: this.q.low });
     if (!this.views.has(e.id)) { a.dispose(); return; }
+    a.holder.add(blobShadow(e.r * 3));
     v.actor = a; v.pending = false; v.star = e.star;
     const team = e.p === this.me ? 0 : 1;
     const ring = new THREE.Mesh(new THREE.RingGeometry(e.r * 0.95, e.r * 1.2, 32), new THREE.MeshBasicMaterial({ color: e.star > 1 ? '#ffd166' : TEAM[team], transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
@@ -255,7 +259,7 @@ export class BattleView {
         if (b.actor) { b.g.remove(b.actor.holder); b.actor.dispose(); b.actor = null; }
         if (h) {
           const k = key;
-          makeHero(h.id, { star: h.star }).then(a => {
+          makeHero(h.id, { star: h.star, lite: this.q.low }).then(a => {
             if (b.key !== k) { a.dispose(); return; }
             a.holder.position.y = 0.23; a.holder.scale.multiplyScalar(1.05); a.play('idle'); b.actor = a; b.g.add(a.holder);
           });
@@ -278,7 +282,7 @@ export class BattleView {
     // caméra (tremblement)
     if (this.shake > 0) { this.shake = Math.max(0, this.shake - dt); const k = this.shake * 0.5; this.cam.position.set(this.camBase.x + (Math.random() - 0.5) * k, this.camBase.y + (Math.random() - 0.5) * k, this.camBase.z + (Math.random() - 0.5) * k); }
     else this.cam.position.copy(this.camBase);
-    this.r.render(this.scene, this.cam);
+    this.post.render();
     this.drawOverlay(s, alpha, dt);
   }
 

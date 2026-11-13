@@ -21,7 +21,7 @@ export const THEMES = {
     sun: '#ffffff', sunI: 2.4, hemiSky: '#e8f2ff', hemiGround: '#8090a8', hemiI: 1.2, exposure: 0.95, parts: 'snow', partCol: '#ffffff',
     props: [['PineTree_Snow_1', 0.9], ['PineTree_Snow_3', 0.9], ['Rock_Snow_2', 1.1], ['Bush_Snow_1', 1]], ice: '#a8e6ff', back: 'PineTree_Snow_3' },
   ombre: { skyTop: '#07050f', skyBot: '#4a2868', fog: '#2a1840', ground: '#423a52', ground2: '#383046', path: '#5e5470', rock: '#3a3448', rock2: '#221e2c',
-    sun: '#c8a8ff', sunI: 1.9, hemiSky: '#8a70c0', hemiGround: '#100818', hemiI: 1.1, exposure: 1.1, parts: 'wisps', partCol: '#c08aff', runes: '#b46bff',
+    sun: '#d8c0ff', sunI: 2.5, hemiSky: '#a890d8', hemiGround: '#201030', hemiI: 1.5, exposure: 1.2, parts: 'wisps', partCol: '#c08aff', runes: '#b46bff',
     props: [['CommonTree_Dead_2', 0.9], ['Willow_Dead_1', 0.9], ['Rock_3', 1], ['TreeStump_Moss', 1]], graves: true, back: 'Willow_Dead_1', tintProps: '#8a80a0' },
 };
 
@@ -115,7 +115,7 @@ function islandBody(T) {
   return new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }));
 }
 
-function skyDome(T) {
+export function skyDome(T) {
   const m = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
     uniforms: { top: { value: new THREE.Color(T.skyTop) }, bot: { value: new THREE.Color(T.skyBot) } },
@@ -187,7 +187,7 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
   Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 18, bottom: -18, near: 1, far: 60 });
   sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
   group.add(sun); group.add(sun.target);
-  const fill = new THREE.DirectionalLight(T.skyBot, 0.6); fill.position.set(8, 6, -12); group.add(fill);
+  const fill = new THREE.DirectionalLight(T.skyBot, 1.3); fill.position.set(6, 9, -16); group.add(fill);
 
   // sol de l'île
   const { map, em } = groundTexture(T);

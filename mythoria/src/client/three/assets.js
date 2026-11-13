@@ -7,6 +7,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { HERO } from '../../shared/content.js';
 import { buildProc } from './procedural.js';
+import { addRim, addOutline, syncOutlines } from './look.js';
+import { attachHeroFx } from './herofx.js';
 
 const BASE = 'assets/models/';
 const loader = new GLTFLoader();
@@ -59,7 +61,7 @@ class Actor {
       const cl = list.map(m => {
         const c = m.clone();
         if (tint) c.color.multiply(new THREE.Color(tint));
-        if (glow) { c.emissive = new THREE.Color(glow); c.emissiveIntensity = 0.12; }
+        if (glow) { c.emissive = new THREE.Color(glow); c.emissiveIntensity = 0.05; }
         c.userData.baseEmissive = c.emissive ? c.emissive.clone() : new THREE.Color(0);
         c.userData.baseEI = c.emissiveIntensity || 0;
         this.mats.push(c);
@@ -135,7 +137,7 @@ function normalize(root, wanted) {
 }
 
 // Fabrique un héros 3D. Le modèle doit avoir été préchargé (preload) pour être instantané.
-export async function makeHero(id, { star = 1 } = {}) {
+async function buildHero(id, { star = 1 } = {}) {
   const c = HERO[id], m = c.model;
   const holder = new THREE.Group();
   const size = (m.scale || 1) * [1, 1, 1.18, 1.36][star];
@@ -190,6 +192,23 @@ export async function makeHero(id, { star = 1 } = {}) {
   });
   a.collectMats(m.tint, m.glow);
   holder.add(root); a.holder = holder;
+  return a;
+}
+
+// Fabrique un héros 3D complet : modèle + lumière de contour + contour sombre + effets propres au héros.
+// opts : star, outline (true), fx (true), lite (moins de particules)
+export async function makeHero(id, opts = {}) {
+  const a = await buildHero(id, opts);
+  const c = HERO[id], m = c.model;
+  const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');
+  const rimK = m.glow ? 0.32 : 0.24;
+  for (const mat of a.mats) if (mat.isMeshStandardMaterial && !mat.transparent) addRim(mat, rimCol, rimK, 3.2);
+  if (opts.outline !== false) addOutline(a.root, m.proc ? 0.035 : 0.03);
+  const fx = opts.fx === false ? null : attachHeroFx(a, id, { lite: opts.lite });
+  const orig = a.update.bind(a);
+  let t = Math.random() * 10;
+  const proc = !!m.proc && opts.outline !== false;
+  a.update = dt => { orig(dt); t += dt; if (fx) fx(dt, t, a.state); if (proc) syncOutlines(a.root); };
   return a;
 }
 
