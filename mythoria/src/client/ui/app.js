@@ -18,7 +18,7 @@ let P, root, tab = 'battle', swapIn = null, filter = 'all', stage = null;
 export const APP = { version: '' };
 
 export function startApp(el, version) {
-  root = el; APP.version = version; P = loadProfile(); setSound(P.sound);
+  root = el; APP.version = version; P = loadProfile(); saveProfile(P); setSound(P.sound);
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   if (!webglOk()) { root.innerHTML = '<div class="nogl"><div class="logo">MYTHORIA</div><p>Ton navigateur ne permet pas l’affichage 3D (WebGL). Ouvre le jeu dans Chrome à jour.</p></div>'; return; }
   initProgress({ P: () => P, render: () => render(), portraitImg });

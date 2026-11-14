@@ -80,6 +80,7 @@ export class HeroMode {
     this.resize(); this.onResize = () => this.resize(); addEventListener('resize', this.onResize);
     this.elLoad.classList.add('off'); setTimeout(() => this.elLoad.remove(), 500);
     window.__hero = this;
+    setTimeout(() => { const hn = this.el.querySelector('.b-hint'); if (hn) hn.classList.add('off'); }, 6000);
     this.raf = requestAnimationFrame(t => this.loop(t));
   }
   resize() {
@@ -218,10 +219,10 @@ export class HeroMode {
     for (const e of this.enemies) if (e.a) e.a.update(dt);
     this.aim.position.set(P.x, 0.06, P.z);
     // caméra qui suit le héros
-    const tx = P.x * 0.85, tz = P.z * 0.85 + 7.5;
-    this.cam.position.lerp(new THREE.Vector3(tx, 15, tz), Math.min(1, dt * 4));
+    const tx = P.x * 0.7, tz = P.z * 0.7 + 12.5;
+    this.cam.position.lerp(new THREE.Vector3(tx, 14.5, tz), Math.min(1, dt * 4));
     if (this.shake > 0) { this.shake -= dt; this.cam.position.x += (Math.random() - 0.5) * this.shake; }
-    this.cam.lookAt(P.x * 0.85, 0, P.z * 0.85 - 0.5);
+    this.cam.lookAt(P.x * 0.7, 0, P.z * 0.7 - 1.5);
     this.fx.update(dt); this.world.update(dt, this.t);
     this.post.render();
     this.hud(dt);

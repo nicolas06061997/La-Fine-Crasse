@@ -43,6 +43,13 @@ il suffit de remplacer le champ `model` du héros dans `content.js`.
 Commandes possibles : `summon`, `merge`, `deploy`, `spell`, toutes vérifiées par `check()`.
 En ligne, seul le serveur fera avancer la simulation : modifier le jeu dans son navigateur ne donnera aucun avantage.
 
+## Progression, Royaume, modes (14/11/2026)
+- `src/shared/economy.js` : niveaux des héros, coffres (cycle fixe), boutique du jour, missions, connexion, apparences.
+- `src/shared/kingdom.js` : bâtiments, coûts, durées, production, bonus (jamais en Arène pour rester équitable).
+- `src/shared/campaign.js` : 6 chapitres × 5 étapes, 6 boss (compétences slam/summon/freeze/heal/fire, rage à 50 %), événements, tournoi, vagues de survie.
+- `src/shared/sim.js` : modes `duel`, `campaign` (boss), `survival` (vagues), `mods` (événements), `bonus` (Royaume).
+- Client : `ui/progress.js`, `ui/kingdom.js` + `three/kingdomview.js`, `ui/modes.js`, `heromode.js` (Mode Héros, moteur séparé non déterministe car solo).
+
 ## Organisation
 - `src/shared/` : règles (content, sim, ai, rng) — aucun code navigateur.
 - `src/client/three/` : 3D (assets, procedural, world, fx, battleview, showcase, stage).
