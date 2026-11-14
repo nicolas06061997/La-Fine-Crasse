@@ -6,12 +6,13 @@ import { HERO, SPELL, MAX_STAR } from './content.js';
 import { CY, HEART, SUMMON_COST, check, sanctOf, inIsland } from './sim.js';
 import { makeRng } from './rng.js';
 
+// think : secondes entre deux décisions ; mana : vitesse de l'éther de l'IA ; mistake : chance d'agir au hasard / de rester passive.
 export const AI_LEVELS = [
-  { name: 'Recrue',    think: 1.5,  merge: 0.4, defend: 0.6, heart: 0.3, spellSmart: 0.3, reserve: 0 },
-  { name: 'Soldat',    think: 1.05, merge: 0.7, defend: 0.8, heart: 0.6, spellSmart: 0.6, reserve: 0 },
-  { name: 'Capitaine', think: 0.75, merge: 0.9, defend: 0.95, heart: 0.85, spellSmart: 0.85, reserve: 2 },
-  { name: 'Champion',  think: 0.55, merge: 1, defend: 1, heart: 1, spellSmart: 1, reserve: 2 },
-  { name: 'Seigneur',  think: 0.4,  merge: 1, defend: 1, heart: 1, spellSmart: 1, reserve: 3 },
+  { name: 'Recrue',    think: 3.6, merge: 0.1, defend: 0.35, heart: 0.15, spellSmart: 0.2, reserve: 0, mana: 0.6, mistake: 0.45 },
+  { name: 'Soldat',    think: 3.1, merge: 0.3, defend: 0.5, heart: 0.3, spellSmart: 0.35, reserve: 0, mana: 0.68, mistake: 0.36 },
+  { name: 'Capitaine', think: 2.8, merge: 0.45, defend: 0.6, heart: 0.45, spellSmart: 0.55, reserve: 0, mana: 0.72, mistake: 0.3 },
+  { name: 'Champion',  think: 2.6, merge: 0.55, defend: 0.65, heart: 0.55, spellSmart: 0.7, reserve: 0, mana: 0.76, mistake: 0.25 },
+  { name: 'Seigneur',  think: 2.2, merge: 0.7, defend: 0.8, heart: 0.7, spellSmart: 0.85, reserve: 0, mana: 0.84, mistake: 0.16 },
 ];
 
 export function createBot(p, level = 1, seed = 7) {
@@ -27,6 +28,13 @@ export function botThink(bot, s, dt) {
   if (bot.wait > 0 || s.over) return null;
   bot.wait = bot.L.think * (0.7 + bot.rng() * 0.6);
   const p = bot.p, P = s.players[p], L = bot.L, home = p === 0 ? 1 : -1;
+  if (bot.rng() < L.mistake) {
+    // erreur volontaire : ne rien faire, ou poser un héros n'importe où
+    if (bot.rng() < 0.5) return null;
+    const k = P.bench.findIndex(Boolean); if (k < 0) return null;
+    const cm = { p, t: 'deploy', slot: k, x: 2 + bot.rng() * 12, y: p === 0 ? CY + 2 + bot.rng() * 8 : CY - 2 - bot.rng() * 8 };
+    return check(s, cm) ? null : cm;
+  }
   const ok = cm => (check(s, cm) ? null : cm);
   const mySide = y => (p === 0 ? y > CY + 0.9 : y < CY - 0.9);
   const enemies = s.ents.filter(e => !e.dead && e.p !== p && e.kind === 'unit');

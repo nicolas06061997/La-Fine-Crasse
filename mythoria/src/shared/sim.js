@@ -39,7 +39,7 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null }) {
+export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
@@ -47,7 +47,7 @@ export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'],
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
       spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
-      bonus: (p === 0 && bonus) || { hp: 1, sanctDmg: 1, eveil: 1 },
+      bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
   for (const p of [0, 1]) {
@@ -317,7 +317,7 @@ export function step(s, cmds = []) {
   if (s.mode === 'survival') waveTick(s, dt);
   for (const [p, P] of s.players.entries()) {
     const bonus = s.heart.owner === p ? 1.35 : 1;
-    P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) / MANA_REGEN * dt);
+    P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) * (P.bonus.mana || 1) / MANA_REGEN * dt);
     P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);

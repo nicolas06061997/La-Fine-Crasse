@@ -15,7 +15,7 @@ export class Battle {
   constructor(root, opts) {
     this.o = opts; this.root = root;
     const seed = (Math.random() * 1e9) | 0;
-    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus });
+    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
     this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
     this.me = 0; this.pending = []; this.drag = null; this.aiming = false;
     this.acc = 0; this.started = false; this.ended = false;
@@ -205,6 +205,9 @@ export class Battle {
     this.gems.forEach((g, i) => { g.className = i < full ? 'on' : i === full ? 'part' : ''; if (i === full) g.style.setProperty('--f', frac); });
     if (this.elManaN.textContent !== String(full)) this.elManaN.textContent = full;
     this.elSummon.classList.toggle('off', P.mana < SUMMON_COST || !P.bench.includes(null));
+    const nb = P.bench.filter(Boolean).length;
+    this.elSummon.classList.toggle('hint', P.mana >= 4 && nb < 2);
+    if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : appuie sur un héros du Cercle (en bas) et fais-le glisser vers l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
     this.elSpell.style.setProperty('--p', P.eveil / 100);
     this.elSpell.classList.toggle('ready', P.eveil >= 100);
     const hs = s.heart.owner < 0 ? 'Cœur : libre' : s.heart.owner === this.me ? 'Cœur : à toi ✦' : 'Cœur : ennemi';

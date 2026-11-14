@@ -113,4 +113,4 @@ export function makeMissions(seed, weekly) {
 export const LOGIN = [{ gold: 50 }, { gems: 5 }, { gold: 100 }, { crystals: 30 }, { chest: 'argent' }, { gems: 10 }, { chest: 'or' }];
 
 // Niveau des héros de l'IA selon les trophées (le jeu reste juste : l'IA progresse avec toi).
-export const botHeroLevel = trophies => Math.min(MAX_LEVEL, 1 + Math.floor(trophies / 140));
+export const botHeroLevel = trophies => Math.min(MAX_LEVEL, 1 + Math.floor(trophies / 200));

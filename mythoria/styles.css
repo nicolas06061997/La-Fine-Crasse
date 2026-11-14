@@ -352,3 +352,4 @@ body.in-battle #app { display: none; }
 .hm-sup.ready { filter: none; border-color: var(--gold); box-shadow: 0 0 22px rgba(255, 207, 92, .8); animation: pulse 1s infinite; } .hm-sup.ready b { color: #fff; }
 .hero-mode .b-hint { bottom: calc(130px + var(--safe-b)); }
 .hero-mode .b-boss { top: calc(76px + var(--safe-t)); }
+.b-summon.hint:not(.off) { animation: pulse .8s infinite; box-shadow: 0 4px 0 var(--gold3), 0 0 30px rgba(255, 200, 80, .9); }
