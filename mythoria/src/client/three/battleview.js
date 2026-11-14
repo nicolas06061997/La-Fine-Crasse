@@ -170,6 +170,17 @@ export class BattleView {
         case 'spell': this.spellFx(e, w); break;
         case 'heart': this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
         case 'shieldBreak': { const ent = s.ents.find(o => o.id === e.id); if (ent) { const q = this.toWorld(ent.x, ent.y); this.fx.emit(q.x, 1, q.z, { n: 14, color: ['#cfe8ff', '#ffffff'], size: 0.35, life: 0.5, speed: 3 }); } break; }
+        case 'boss': this.shake = 0.6; break;
+        case 'bossSkill': {
+          const v = this.views.get(e.id); if (v && v.actor) v.actor.play(e.k === 'slam' ? 'attack' : 'cast', { force: true });
+          if (e.k === 'slam') { this.fx.explosion(w.x, w.z, e.r, 'roar'); this.fx.ring(w.x, w.z, e.r * 1.3, '#ff5a3a', 0.6); this.shake = 0.45; }
+          else if (e.k === 'freeze') { this.fx.shards(w.x, w.z, e.r, '#bff0ff', 2.2); this.fx.ring(w.x, w.z, e.r, '#bff0ff', 0.7); }
+          else if (e.k === 'heal') { this.fx.pillar(w.x, w.z, 1.2, '#7dff9a', 1.2, 7); this.fx.emit(w.x, 0.5, w.z, { n: 30, color: ['#b0ffb8', '#ffffff'], size: 0.45, life: 1, speed: 2, up: 1 }); }
+          else if (e.k === 'summon') { this.fx.ring(w.x, w.z, 2.4, '#c08aff', 0.8); this.fx.emit(w.x, 0.3, w.z, { n: 26, color: ['#c08aff', '#2a0a40'], size: 0.5, life: 0.9, speed: 1.6, up: 1 }); }
+          else if (e.k === 'rage') { this.fx.flash(w.x, 2, w.z, 6, '#ff2a2a', 0.6); this.shake = 0.3; }
+          break; }
+        case 'bossDown': this.fx.explosion(w.x, w.z, 3, 'fire'); this.fx.pillar(w.x, w.z, 1.4, '#ffd166', 1.4, 10); this.shake = 0.8; break;
+        case 'wave': this.fx.flash(0, 3, -8, 10, '#ff5a3a', 0.6); break;
         case 'summon': if (e.p === this.me) { const b = BENCH_X[e.slot]; const col = RARITIES[HERO[e.id].rar].color; this.fx.pillar(b, BENCH_Z, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, BENCH_Z, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
         case 'benchFuse': if (e.p === this.me) { const b = BENCH_X[e.slot]; this.fx.pillar(b, BENCH_Z, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, BENCH_Z, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
       }
@@ -199,7 +210,8 @@ export class BattleView {
   async ensureView(e) {
     const v = { pending: true, ring: null, actor: null };
     this.views.set(e.id, v);
-    const a = await makeHero(e.card, { star: e.star, lite: this.q.low });
+    const a = await makeHero(e.card, { star: e.star, lite: this.q.low, skin: e.boss ? e.boss.skin : e.p === this.me ? (this.skins || {})[e.card] : null });
+    if (e.boss) { a.holder.scale.multiplyScalar(e.boss.scale); a.height *= e.boss.scale; const gl = glowSprite(0xff2a3a, e.r * 4); gl.material.opacity = 0.3; gl.position.y = 0.3; a.holder.add(gl); }
     if (!this.views.has(e.id)) { a.dispose(); return; }
     a.holder.add(blobShadow(e.r * 3));
     v.actor = a; v.pending = false; v.star = e.star;
@@ -259,7 +271,7 @@ export class BattleView {
         if (b.actor) { b.g.remove(b.actor.holder); b.actor.dispose(); b.actor = null; }
         if (h) {
           const k = key;
-          makeHero(h.id, { star: h.star, lite: this.q.low }).then(a => {
+          makeHero(h.id, { star: h.star, lite: this.q.low, skin: (this.skins || {})[h.id] }).then(a => {
             if (b.key !== k) { a.dispose(); return; }
             a.holder.position.y = 0.23; a.holder.scale.multiplyScalar(1.05); a.play('idle'); b.actor = a; b.g.add(a.holder);
           });

@@ -9,7 +9,8 @@ const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', '
   './src/client/three/fx.js', './src/client/three/battleview.js', './src/client/three/stage.js', './src/client/three/showcase.js', './src/client/three/look.js', './src/client/three/herofx.js',
   './vendor/addons/postprocessing/EffectComposer.js', './vendor/addons/postprocessing/RenderPass.js', './vendor/addons/postprocessing/UnrealBloomPass.js', './vendor/addons/postprocessing/ShaderPass.js', './vendor/addons/postprocessing/OutputPass.js', './vendor/addons/postprocessing/Pass.js', './vendor/addons/postprocessing/MaskPass.js',
   './vendor/addons/shaders/CopyShader.js', './vendor/addons/shaders/LuminosityHighPassShader.js', './vendor/addons/shaders/OutputShader.js',
-  './src/shared/content.js', './src/shared/sim.js', './src/shared/ai.js', './src/shared/rng.js'];
+  './src/shared/content.js', './src/shared/economy.js', './src/shared/kingdom.js', './src/shared/campaign.js',
+  './src/client/ui/progress.js', './src/client/ui/kingdom.js', './src/client/ui/modes.js', './src/client/three/kingdomview.js', './src/client/heromode.js', './src/shared/sim.js', './src/shared/ai.js', './src/shared/rng.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)

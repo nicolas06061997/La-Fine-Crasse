@@ -10,7 +10,8 @@ import { HERO, RARITIES } from '../../shared/content.js';
 
 // ---------- Vitrine ----------
 export class Showcase {
-  constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero' } = {}) {
+  constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero', skin = null } = {}) {
+    this.skin = skin;
     this.cv = canvas; this.mode = mode;
     this.r = createRenderer(canvas);
     this.scene = new THREE.Scene();
@@ -44,7 +45,7 @@ export class Showcase {
   async setHero(id, star = 1) {
     const my = (this.req = (this.req || 0) + 1); this.heroId = id;
     await preload([id]);
-    const a = await makeHero(id, { star });
+    const a = await makeHero(id, { star, skin: this.skin });
     if (my !== this.req || this.dead) { a.dispose(); return; }
     if (this.actor) { this.base.remove(this.actor.holder); this.actor.dispose(); }
     this.actor = a; a.play('idle'); a.back = 'idle'; this.base.add(a.holder); a.holder.add(blobShadow(1.4));

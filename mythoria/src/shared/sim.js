@@ -39,22 +39,24 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'] }) {
+export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null }) {
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
-    over: false, winner: -1, reason: '', overtime: false,
+    over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
     heart: { ctl: 0, owner: -1 },
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
-      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0,
+      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
+      bonus: (p === 0 && bonus) || { hp: 1, sanctDmg: 1, eveil: 1 },
     })),
   };
   for (const p of [0, 1]) {
-    s.ents.push({ id: s.nextId++, p, kind: 'sanct', x: CX, y: SANCT.y[p], px: CX, py: SANCT.y[p], hp: SANCT.hp, maxHp: SANCT.hp,
-      dmg: SANCT.dmg, hit: SANCT.hit, cd: 0, range: SANCT.range, r: SANCT.r, tgt: 'any', proj: 'bolt', splash: SANCT.splash, star: 1, shield: 0, frozen: 0, slowT: 0, dead: false });
+    s.ents.push({ id: s.nextId++, p, kind: 'sanct', x: CX, y: SANCT.y[p], px: CX, py: SANCT.y[p], hp: SANCT.hp, maxHp: SANCT.hp, invuln: mode === 'survival' && p === 1,
+      dmg: Math.round(SANCT.dmg * s.players[p].bonus.sanctDmg), hit: SANCT.hit, cd: 0, range: SANCT.range, r: SANCT.r, tgt: 'any', proj: 'bolt', splash: SANCT.splash, star: 1, shield: 0, frozen: 0, slowT: 0, dead: false });
   }
   // Chaque camp commence avec 2 héros sur son cercle.
   for (const p of [0, 1]) for (let k = 0; k < 2; k++) summonHero(s, p);
+  if (boss) spawnBoss(s, 1, boss, CX, 6.2);
   s.ev = [];
   return s;
 }
@@ -107,7 +109,7 @@ function summonHero(s, p) {
   for (const id of P.deck) tot += RARITIES[HERO[id].rar].weight;
   let r = rnd(s) * tot, pick = P.deck[0];
   for (const id of P.deck) { r -= RARITIES[HERO[id].rar].weight; if (r <= 0) { pick = id; break; } }
-  P.bench[slot] = { id: pick, star: 1 };
+  P.bench[slot] = { id: pick, star: s.mods.startStar || 1 };
   P.summons++;
   s.ev.push({ type: 'summon', p, slot, id: pick });
 }
@@ -116,13 +118,13 @@ function apply(s, cm) {
   const P = s.players[cm.p];
   if (cm.t === 'summon') { P.mana -= SUMMON_COST; summonHero(s, cm.p); }
   else if (cm.t === 'merge') {
-    P.bench[cm.b].star++; P.bench[cm.a] = null;
+    P.bench[cm.b].star++; P.bench[cm.a] = null; P.fuses++;
     s.ev.push({ type: 'benchFuse', p: cm.p, slot: cm.b, star: P.bench[cm.b].star, id: P.bench[cm.b].id });
   } else if (cm.t === 'deploy') {
     const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.deployed++;
     deployHero(s, cm.p, h, cm.x, cm.y);
   } else if (cm.t === 'spell') {
-    P.eveil = 0;
+    P.eveil = 0; P.spells++;
     const c = SPELL[P.spell];
     s.ev.push({ type: 'cast', p: cm.p, spell: P.spell, x: cm.x, y: cm.y, delay: c.delay || 0 });
     const n = c.strikes || 1;
@@ -145,13 +147,14 @@ function mults(s, p, c) {
 
 function applyStats(s, e) {
   const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
-  e.maxHp = Math.round(c.hp * m.hp * lv * st);
-  e.dmg = Math.round(c.dmg * m.dmg * lv * st);
+  e.maxHp = Math.round(c.hp * m.hp * lv * st * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
+  if (e.bossHp) e.maxHp = e.bossHp;
+  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st);
   e.hit = c.hit / m.atk;
   e.regen = m.regen;
   e.slowOn = Math.max(c.slow || 0, m.slow);
   e.steal = (c.lifesteal || 0) + m.steal;
-  e.r = c.r * STAR_SIZE[e.star];
+  e.r = e.bossR || c.r * STAR_SIZE[e.star];
 }
 
 function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
@@ -177,7 +180,7 @@ function deployHero(s, p, h, x, y) {
   if (c.count === 1) {
     const twin = s.ents.find(e => !e.dead && e.p === p && e.card === h.id && e.star === h.star && e.star < MAX_STAR && dist(e, { x, y }) <= 1.6);
     if (twin) {
-      twin.star++; applyStats(s, twin); twin.hp = twin.maxHp;
+      twin.star++; applyStats(s, twin); twin.hp = twin.maxHp; s.players[p].fuses++;
       s.ev.push({ type: 'fuse', id: twin.id, star: twin.star, x: twin.x, y: twin.y });
       return;
     }
@@ -195,7 +198,7 @@ function deployHero(s, p, h, x, y) {
 
 // ---------- Dégâts ----------
 function damage(s, t, amount, src) {
-  if (t.dead || amount <= 0) return;
+  if (t.dead || amount <= 0 || t.invuln) return;
   if (t.fly && src && src.proj) amount *= 1.35; // les tirs à distance sont efficaces contre les volants
   amount = Math.round(amount);
   if (t.shield > 0) {
@@ -214,7 +217,8 @@ function kill(s, t) {
   if (t.dead) return;
   t.dead = true; t.hp = 0;
   s.ev.push({ type: 'die', id: t.id, kind: t.kind, card: t.card, p: t.p, x: t.x, y: t.y });
-  if (t.kind === 'sanct') return finish(s, 1 - t.p, 'sanct');
+  if (t.kind === 'sanct') return finish(s, 1 - t.p, s.mode === 'survival' ? 'survival' : 'sanct');
+  if (t.boss) s.ev.push({ type: 'bossDown', id: t.id, x: t.x, y: t.y });
   const c = t.card && HERO[t.card];
   if (c && c.death) for (let k = 0; k < c.death.n; k++) { const e = spawn(s, t.p, c.death.id, t.x + (k ? 0.55 : -0.55), t.y, 1, t.lvl, 0.3); clampIsland(e); }
 }
@@ -310,10 +314,11 @@ export function step(s, cmds = []) {
   }
   const dt = DT;
   updateHeart(s, dt);
+  if (s.mode === 'survival') waveTick(s, dt);
   for (const [p, P] of s.players.entries()) {
     const bonus = s.heart.owner === p ? 1.35 : 1;
-    P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT ? 2 : 1) * bonus / MANA_REGEN * dt);
-    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * dt);
+    P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) / MANA_REGEN * dt);
+    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
   s.pend = s.pend.filter(sp => sp.at > s.tick);
@@ -351,6 +356,7 @@ export function step(s, cmds = []) {
       }
     }
 
+    if (e.boss) bossTick(s, e, dt);
     let t = e.target ? s.ents.find(o => o.id === e.target) : null;
     e.retarget -= dt;
     if (!t || t.dead || !canTarget(e, t) || e.retarget <= 0 || (e.kind !== 'unit' && gap(e, t) > e.range)) {
@@ -395,7 +401,7 @@ function updateHeart(s, dt) {
   if (H0.ctl >= 0.999) H0.owner = 0;
   else if (H0.ctl <= -0.999) H0.owner = 1;
   else if ((H0.owner === 0 && H0.ctl <= 0) || (H0.owner === 1 && H0.ctl >= 0)) H0.owner = -1;
-  if (H0.owner !== before) s.ev.push({ type: 'heart', owner: H0.owner });
+  if (H0.owner !== before) { s.ev.push({ type: 'heart', owner: H0.owner }); if (H0.owner >= 0) s.players[H0.owner].hearts++; }
 }
 
 function onLand(s, e) {
@@ -413,7 +419,7 @@ function castSpell(s, sp) {
   if (c.strikes) { const o = [[0, 0], [-1, 0.8], [1, -0.7]][sp.k % 3]; x += o[0]; y += o[1]; }
   s.ev.push({ type: 'spell', spell: sp.spell, fx: c.fx, x, y, r: c.strikes ? c.radius * 0.6 : c.radius, p: sp.p });
   const r = c.strikes ? c.radius * 0.6 : c.radius;
-  if (c.dmg) areaDamage(s, sp.p, x, y, r, c.dmg * m.dmg * lv, c.sanctPct || 0.3, null);
+  if (c.dmg) areaDamage(s, sp.p, x, y, r, sp.bossDmg || c.dmg * m.dmg * lv, c.sanctPct || 0.3, null);
   if (c.freeze) for (const e of s.ents) if (!e.dead && e.p !== sp.p && dist(e, { x, y }) <= r + e.r * 0.5) e.frozen = Math.max(e.frozen, c.freeze);
   if (c.heal) for (const e of s.ents) if (!e.dead && e.p === sp.p && e.kind !== 'sanct' && dist(e, { x, y }) <= r + e.r * 0.5) {
     e.hp = Math.min(e.maxHp, e.hp + c.heal * lv); e.shield += Math.round(c.shieldAdd * lv);
@@ -460,7 +466,7 @@ function separate(s) {
 
 const ratio = (s, p) => { const e = sanctOf(s, p); return Math.max(0, e.hp) / e.maxHp; };
 function checkTime(s) {
-  if (s.over) return;
+  if (s.over || s.mode === 'survival') return;
   const a = ratio(s, 0), b = ratio(s, 1);
   if (s.t >= MATCH_TIME && !s.overtime) {
     if (Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'time');
@@ -479,4 +485,51 @@ export function hashState(s) {
   for (const e of s.ents) { add(e.id); add(e.x); add(e.y); add(e.hp); }
   for (const P of s.players) { add(P.mana); add(P.eveil); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
+}
+
+// ---------- Boss (campagne) ----------
+// def : { base (héros servant de modèle), name, hp, dmg, hit, range, spd, r, scale, skills: [{ k, every, ... }] }
+export function spawnBoss(s, p, def, x, y) {
+  const e = spawn(s, p, def.base, x, y, 1, 1, 2.0);
+  e.boss = def; e.bossHp = def.hp; e.bossDmg = def.dmg; e.bossR = def.r || 1.1;
+  e.hit = def.hit || 1.6; e.spd = def.spd || 0.7; e.range = def.range || 1.3; e.tgt = def.tgt || 'any'; e.splash = def.splash || 1.4;
+  e.fly = !!def.fly; e.proj = def.proj || null;
+  applyStats(s, e); e.hp = e.maxHp; e.hit = def.hit || 1.6; e.range = def.range || 1.3;
+  e.skillT = (def.skills || []).map(k => k.every * 0.6);
+  s.ev.push({ type: 'boss', id: e.id, name: def.name });
+  return e;
+}
+function bossTick(s, e, dt) {
+  const def = e.boss;
+  (def.skills || []).forEach((k, i) => {
+    e.skillT[i] -= dt;
+    if (e.skillT[i] > 0) return;
+    e.skillT[i] = k.every;
+    if (k.k === 'slam') { areaDamage(s, e.p, e.x, e.y, k.r || 3, k.dmg, 0.25, e); s.ev.push({ type: 'bossSkill', k: 'slam', id: e.id, x: e.x, y: e.y, r: k.r || 3 }); }
+    else if (k.k === 'summon') { for (let n = 0; n < (k.n || 2); n++) { const m = spawn(s, e.p, k.id, e.x + (n % 2 ? 1 : -1) * (0.8 + n * 0.3), e.y + 0.8, 1, k.lvl || 1, 0.6); clampIsland(m); } s.ev.push({ type: 'bossSkill', k: 'summon', id: e.id, x: e.x, y: e.y }); }
+    else if (k.k === 'freeze') { for (const o of s.ents) if (!o.dead && o.p !== e.p && o.kind === 'unit' && dist(o, e) <= (k.r || 3.5)) o.frozen = Math.max(o.frozen, k.t || 2); s.ev.push({ type: 'bossSkill', k: 'freeze', id: e.id, x: e.x, y: e.y, r: k.r || 3.5 }); }
+    else if (k.k === 'heal') { e.hp = Math.min(e.maxHp, e.hp + e.maxHp * (k.pct || 0.08)); s.ev.push({ type: 'bossSkill', k: 'heal', id: e.id, x: e.x, y: e.y }); }
+    else if (k.k === 'fire') { const tgt = s.ents.filter(o => !o.dead && o.p !== e.p && o.kind !== 'sanct'); const t = tgt.length ? tgt[Math.floor(rnd(s) * tgt.length)] : sanctOf(s, 1 - e.p); s.pend.push({ at: s.tick + 20, p: e.p, spell: 'meteore', x: t.x, y: t.y, k: 0, bossDmg: k.dmg }); s.ev.push({ type: 'cast', p: e.p, spell: 'meteore', x: t.x, y: t.y, delay: 1 }); }
+  });
+  if (!e.raged && e.hp < e.maxHp * 0.5) { e.raged = true; e.hit *= 0.7; e.spd *= 1.25; s.ev.push({ type: 'bossSkill', k: 'rage', id: e.id, x: e.x, y: e.y }); }
+}
+
+// ---------- Survie : vagues de monstres ----------
+// wavesDef : { pool: [ids], boss: (n) => def | null, lvl: base }
+function waveTick(s, dt) {
+  s.waveT -= dt;
+  const alive = s.ents.some(e => !e.dead && e.p === 1 && e.kind === 'unit');
+  if (!alive && s.waveT > 4) s.waveT = 4; // vague vaincue : la suivante arrive vite
+  if (s.waveT > 0) return;
+  s.wave++;
+  const W = s.wavesDef || { pool: ['squelette', 'pousse'], lvl: 1 };
+  const n = Math.min(14, 2 + Math.floor(s.wave * 1.3)), lvl = (W.lvl || 1) + Math.floor(s.wave / 3);
+  for (let k = 0; k < n; k++) {
+    const id = W.pool[Math.floor(rnd(s) * W.pool.length)];
+    const e = spawn(s, 1, id, 3 + rnd(s) * 10, 2.5 + rnd(s) * 3.5, s.wave >= 8 && rnd(s) < 0.25 ? 2 : 1, lvl, 1.0);
+    clampIsland(e);
+  }
+  if (s.wave % 5 === 0 && W.bosses) { const d = W.bosses[(s.wave / 5 - 1) % W.bosses.length]; spawnBoss(s, 1, { ...d, hp: Math.round(d.hp * (0.6 + s.wave * 0.08)) }, CX, 4); }
+  s.waveT = 26;
+  s.ev.push({ type: 'wave', n: s.wave });
 }

@@ -9,6 +9,7 @@ import { HERO } from '../../shared/content.js';
 import { buildProc } from './procedural.js';
 import { addRim, addOutline, syncOutlines } from './look.js';
 import { attachHeroFx } from './herofx.js';
+import { SKINS } from '../../shared/economy.js';
 
 const BASE = 'assets/models/';
 const loader = new GLTFLoader();
@@ -140,8 +141,8 @@ function normalize(root, wanted) {
 }
 
 // Fabrique un héros 3D. Le modèle doit avoir été préchargé (preload) pour être instantané.
-async function buildHero(id, { star = 1 } = {}) {
-  const c = HERO[id], m = c.model;
+async function buildHero(id, { star = 1, skin = null } = {}) {
+  const c = HERO[id], m = skin && SKINS[skin] ? { ...HERO[id].model, tint: SKINS[skin].tint, glow: SKINS[skin].glow } : HERO[id].model;
   const holder = new THREE.Group();
   const size = (m.scale || 1) * [1, 1, 1.18, 1.36][star];
   if (m.proc) {
@@ -202,7 +203,7 @@ async function buildHero(id, { star = 1 } = {}) {
 // opts : star, outline (true), fx (true), lite (moins de particules)
 export async function makeHero(id, opts = {}) {
   const a = await buildHero(id, opts);
-  const c = HERO[id], m = c.model;
+  const c = HERO[id], m = opts.skin && SKINS[opts.skin] ? { ...c.model, glow: SKINS[opts.skin].glow } : c.model;
   const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');
   const rimK = m.glow ? 0.32 : 0.24;
   for (const mat of a.mats) if (mat.isMeshStandardMaterial && !mat.transparent) addRim(mat, rimCol, rimK, 3.2);

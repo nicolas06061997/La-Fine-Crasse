@@ -15,12 +15,13 @@ export class Battle {
   constructor(root, opts) {
     this.o = opts; this.root = root;
     const seed = (Math.random() * 1e9) | 0;
-    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name] });
-    this.bot = createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
+    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus });
+    this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
     this.me = 0; this.pending = []; this.drag = null; this.aiming = false;
     this.acc = 0; this.started = false; this.ended = false;
     this.build();
     this.view = new BattleView(this.cv, this.ovc, opts.world.key, this.me);
+    this.view.skins = opts.skins || {};
     window.__battle = this;
     this.start();
   }
@@ -49,11 +50,12 @@ export class Battle {
         this.elBanner = h('div', { class: 'b-banner' })),
       h('div', { class: 'b-top' },
         h('div', { class: 'b-who red' },
-          h('div', { class: 'b-name' }, h('span', { class: 'ai-tag' }, '🤖 IA'), h('b', {}, AI_LEVELS[this.o.botLevel].name)),
+          this.o.simMode === 'survival' ? h('div', { class: 'b-name' }, h('span', { class: 'ai-tag' }, 'SURVIE'), this.elWave = h('b', {}, 'Vague 0')) : h('div', { class: 'b-name' }, h('span', { class: 'ai-tag' }, '🤖 IA'), h('b', {}, this.o.title || AI_LEVELS[this.o.botLevel].name)),
           h('div', { class: 'b-hp red' }, this.elOppHp = h('i'), this.elOppHpN = h('span', {}, '')),
           h('div', { class: 'b-name me' }, h('span', { class: 'me-tag' }, 'TOI'), h('b', {}, this.o.myName)),
           h('div', { class: 'b-hp blue' }, this.elMyHp = h('i'), this.elMyHpN = h('span', {}, ''))),
         h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre')),
+        this.elBoss = h('div', { class: 'b-boss' }, h('b', {}, ''), h('div', { class: 'b-hp red' }, h('i'), h('span', {}, ''))),
         h('button', { class: 'b-quit', onclick: () => this.quit(), 'aria-label': 'Quitter' }, icon('close'))),
       h('div', { class: 'b-bottom' },
         h('div', { class: 'b-controls' },
@@ -156,7 +158,7 @@ export class Battle {
       this.acc += dt * SPEED;
       while (this.acc >= DT) {
         const cmds = this.pending.splice(0);
-        const bc = botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
+        const bc = this.bot && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
         step(this.s, cmds);
         this.view.ingest(this.s.ev, this.s);
         this.sounds(this.s.ev);
@@ -178,6 +180,10 @@ export class Battle {
       else if (e.type === 'fuse' || e.type === 'benchFuse') sfx('fuse');
       else if (e.type === 'heart') { sfx('spell'); if (e.owner === this.me) { this.banner('Cœur de Mythe capturé !', 'good'); setTimeout(() => !this.ended && this.banner(''), 1300); } else if (e.owner >= 0) { this.banner('L’ennemi tient le Cœur !', 'bad'); setTimeout(() => !this.ended && this.banner(''), 1300); } }
       else if (e.type === 'attack') { const a = this.s.ents.find(o => o.id === e.id); if (a && a.proj === 'arrow') sfx('arrow', 90); }
+      else if (e.type === 'wave') { this.banner('Vague ' + e.n + ' !', e.n % 5 === 0 ? 'bad' : 'go'); sfx('tick'); setTimeout(() => !this.ended && this.banner(''), 1400); }
+      else if (e.type === 'boss') { this.banner('☠ ' + e.name, 'bad'); sfx('tower'); setTimeout(() => !this.ended && this.banner(''), 1800); }
+      else if (e.type === 'bossSkill') sfx(e.k === 'freeze' ? 'freeze' : e.k === 'heal' ? 'heal' : 'boom', 200);
+      else if (e.type === 'bossDown') { this.banner('Boss vaincu !', 'good'); sfx('win'); setTimeout(() => !this.ended && this.banner(''), 1600); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }
     if (!this.dbl && this.s.t >= DOUBLE_AT) { this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
@@ -185,7 +191,11 @@ export class Battle {
 
   hud() {
     const s = this.s, P = s.players[this.me];
-    const tl = Math.max(0, Math.ceil(timeLeft(s)));
+    const boss = s.ents.find(e => e.boss && !e.dead);
+    this.elBoss.classList.toggle('on', !!boss);
+    if (boss) { this.elBoss.querySelector('b').textContent = '☠ ' + boss.boss.name; this.elBoss.querySelector('i').style.width = (boss.hp / boss.maxHp * 100) + '%'; this.elBoss.querySelector('span').textContent = Math.ceil(boss.hp); }
+    if (this.elWave) this.elWave.textContent = 'Vague ' + s.wave;
+    const tl = s.mode === 'survival' ? Math.floor(s.t) : Math.max(0, Math.ceil(timeLeft(s)));
     const txt = Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
     if (this.elTimer.textContent !== txt) { this.elTimer.textContent = txt; this.elTimer.classList.toggle('hot', s.overtime || tl <= 30); }
     const me = sanctOf(s, this.me), op = sanctOf(s, 1 - this.me);
@@ -205,14 +215,14 @@ export class Battle {
     if (this.ended) return;
     this.ended = true;
     const s = this.s;
-    const result = s.winner === this.me ? 'win' : s.winner < 0 ? 'draw' : 'loss';
-    this.banner(result === 'win' ? 'VICTOIRE !' : result === 'loss' ? 'DÉFAITE' : 'ÉGALITÉ', result === 'win' ? 'good big' : result === 'loss' ? 'bad big' : 'big');
+    const result = s.mode === 'survival' ? 'survival' : s.winner === this.me ? 'win' : s.winner < 0 ? 'draw' : 'loss';
+    this.banner(result === 'survival' ? 'Vague ' + s.wave + ' atteinte !' : result === 'win' ? 'VICTOIRE !' : result === 'loss' ? 'DÉFAITE' : 'ÉGALITÉ', result === 'win' ? 'good big' : result === 'loss' ? 'bad big' : 'big');
     sfx(result === 'win' ? 'win' : result === 'loss' ? 'lose' : 'click');
     const me = sanctOf(s, this.me), op = sanctOf(s, 1 - this.me);
     setTimeout(() => {
       this.destroy();
       this.o.onEnd({ result, myHp: Math.max(0, me.hp) / me.maxHp, oppHp: Math.max(0, op.hp) / op.maxHp, reason: s.reason, time: Math.round(s.t),
-        opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, heart: s.heart.owner === this.me });
+        opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, heart: s.heart.owner === this.me, stats: this.stats(), wave: s.wave || 0, extra: this.o.extra });
     }, 2800);
   }
 
@@ -223,8 +233,10 @@ export class Battle {
     this.ended = true;
     const me = sanctOf(this.s, this.me), op = sanctOf(this.s, 1 - this.me);
     this.destroy();
-    this.o.onEnd({ result: 'loss', myHp: Math.max(0, me.hp) / me.maxHp, oppHp: op.hp / op.maxHp, reason: 'forfeit', time: Math.round(this.s.t), opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id });
+    this.o.onEnd({ result: 'loss', myHp: Math.max(0, me.hp) / me.maxHp, oppHp: op.hp / op.maxHp, reason: 'forfeit', time: Math.round(this.s.t), opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, stats: this.stats(), wave: this.s.wave || 0, extra: this.o.extra });
   }
+
+  stats() { const P = this.s.players[this.me]; return { deployed: P.deployed, fuses: P.fuses, spells: P.spells, hearts: P.hearts }; }
 
   destroy() {
     this.dead = true; cancelAnimationFrame(this.raf);

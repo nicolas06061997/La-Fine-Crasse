@@ -1,8 +1,12 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
 import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, applyResult, xpNeed } from '../store.js';
+import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
+import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
+import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
+import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft } from './modes.js';
 import { Battle, spellIcon } from '../battle.js';
+import { HeroMode } from '../heromode.js';
 import { Showcase, portrait } from '../three/showcase.js';
 import { webglOk } from '../three/stage.js';
 import { THEMES } from '../three/world.js';
@@ -17,7 +21,11 @@ export function startApp(el, version) {
   root = el; APP.version = version; P = loadProfile(); setSound(P.sound);
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   if (!webglOk()) { root.innerHTML = '<div class="nogl"><div class="logo">MYTHORIA</div><p>Ton navigateur ne permet pas l’affichage 3D (WebGL). Ouvre le jeu dans Chrome à jour.</p></div>'; return; }
+  initProgress({ P: () => P, render: () => render(), portraitImg });
+  initKingdom({ P: () => P, render: () => render() });
+  initModes({ P: () => P, render: () => render(), play: (m, l, w, x) => play(m, l, w, x) });
   render();
+  setTimeout(loginPopup, 900);
   // prépare les portraits en arrière-plan
   setTimeout(() => P.deck.forEach(id => portrait(id)), 600);
 }
@@ -25,6 +33,7 @@ export function startApp(el, version) {
 // ---------- Cadre ----------
 function render() {
   if (stage) { stage.dispose(); stage = null; }
+  leaveKingdom();
   root.innerHTML = '';
   root.append(topBar(), h('main', { class: 'screen s-' + tab }, screen()), navBar());
 }
@@ -59,8 +68,8 @@ function navBar() {
 function screen() {
   if (tab === 'battle') return homeScreen();
   if (tab === 'heroes') return heroesScreen();
-  if (tab === 'shop') return soon('shop', 'Boutique & Récompenses', 5, ['Boutique quotidienne', 'Coffres', 'Récompenses de connexion', 'Missions quotidiennes et hebdomadaires', 'Apparences (skins) des héros', 'Pass de saison équitable : aucune puissance à acheter']);
-  if (tab === 'kingdom') return soon('castle', 'Ton Royaume', 4, ['Ton château sur ta propre île flottante', 'Mines d’or et carrières de cristal', 'Casernes et académie', 'Tours de défense', 'Bâtiments spéciaux et décorations', 'Défendre ton île contre les autres joueurs']);
+  if (tab === 'shop') return shopScreen();
+  if (tab === 'kingdom') return kingdomScreen();
   if (tab === 'clan') return soon('clan', 'Clans & Amis', 6, ['Créer ou rejoindre un clan', 'Chat du clan', 'Dons de héros', 'Guerres de clans', 'Combats amicaux', 'Classements mondial, par pays et des clans']);
 }
 
@@ -90,12 +99,14 @@ function homeScreen() {
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
     h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('sword')), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),
       tile('heroes', 'Héros', owned(P).length + ' / ' + PLAYABLE.length, () => { tab = 'heroes'; render(); }),
+      missionsButton(),
       tile('book', 'Règles', 'Comment jouer', openHowTo)),
     h('p', { class: 'muted center small' }, 'Progression sauvegardée sur ce téléphone · vrais adversaires en ligne : phase 3'));
-  requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home' }); });
+  requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home', skin: P.skins.eq[fav.id] }); });
   return el;
 }
 function tile(ic, title, sub, fn) { return h('button', { class: 'tile', onclick: () => { sfx('click'); fn(); } }, icon(ic), h('b', {}, title), h('small', {}, sub)); }
@@ -103,20 +114,23 @@ function tile(ic, title, sub, fn) { return h('button', { class: 'tile', onclick:
 // ---------- Modes ----------
 function openModes() {
   sfx('click');
-  const lvl = botLevelFor(P), w = worldOf(P);
+  const lvl = botLevelFor(P), w = worldOf(P), ev = currentEvent();
+  const T = P.tourney || { round: 0 };
   const s = sheet(h('div', { class: 'modes' },
     h('h3', {}, 'Choisis ton combat'),
-    mode('sword', 'Mode Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · gagne des trophées et de l’or', () => { s.close(); play('arena', lvl, w); }),
+    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); play('arena', lvl, w); }),
+    mode('map', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); openCampaign(); }),
+    mode('shield', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); playSurvival(); }),
+    mode('star', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); playEvent(); }),
+    mode('heroes', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), () => { s.close(); pickHero(); }),
+    mode('trophy', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), () => { s.close(); playTourney(); }),
     h('div', { class: 'mode' },
       h('div', { class: 'mode-ic' }, icon('summon')),
-      h('div', { class: 'mode-txt' }, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA. Ne change pas tes trophées.'),
+      h('div', { class: 'mode-txt' }, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA. Sans trophées.'),
         h('div', { class: 'lvls' }, AI_LEVELS.map((L, i) => h('button', { class: 'btn small', onclick: () => { s.close(); play('training', i, w); } }, (i + 1) + '. ' + L.name))))),
-    h('h4', {}, 'Bientôt'),
-    mode('heroes', 'Duel en ligne', 'Phase 3 — contre de vrais joueurs, via le serveur. Jamais de faux joueurs.', null),
-    mode('clan', 'À deux contre deux', 'Phase 3 — avec un ami', null),
-    mode('shield', 'Survie', 'Phase 7 — résister aux vagues de monstres', null),
-    mode('map', 'Campagne', 'Phase 7 — l’histoire de Mythoria et ses boss', null),
-    mode('trophy', 'Tournoi & Guerre de clans', 'Phase 6', null)));
+    h('h4', {}, 'Avec le serveur (phase 3)'),
+    mode('heroes', 'Duel en ligne · 2 contre 2', 'Contre de vrais joueurs. Jamais de faux joueurs.', null),
+    mode('clan', 'Amis, clans, chat, guerre de clans, classements', 'Ils ont besoin du serveur pour relier les joueurs.', null)));
 }
 function mode(ic, title, desc, onPlay) {
   return h('div', { class: 'mode' + (onPlay ? '' : ' locked') },
@@ -125,33 +139,59 @@ function mode(ic, title, desc, onPlay) {
     onPlay ? h('button', { class: 'btn gold', onclick: onPlay }, 'Jouer') : h('span', { class: 'lock' }, icon('lock')));
 }
 
-function play(modeId, level, world) {
+function play(modeId, level, world, extra = {}) {
   if (stage) { stage.dispose(); stage = null; }
+  leaveKingdom();
   const tro = modeId === 'arena' ? P.trophies : Math.max(P.trophies, world.trophies);
   const seed = (Math.random() * 1e9) | 0;
+  const oppDeck = extra.oppDeck || botDeck(tro, seed, world.fac);
   const holder = h('div', { class: 'battle-holder' });
   document.body.append(holder); document.body.classList.add('in-battle');
   new Battle(holder, {
-    deck: P.deck.slice(), spell: P.spell, oppDeck: botDeck(tro, seed, world.fac), oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
-    onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); showResult(r); },
+    deck: P.deck.slice(), spell: P.spell, oppDeck, oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
+    levels: { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: { ...P.skins.eq },
+    simMode: extra.simMode, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
+    onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
   });
+}
+
+// ---------- Mode Héros ----------
+function pickHero() {
+  const list = owned(P);
+  const s = sheet(h('div', { class: 'modes' }, h('h3', {}, 'Choisis ton héros'), h('p', { class: 'muted' }, 'Glisse à gauche pour bouger, bouton Attaque à droite, Super quand le cercle est plein. Les niveaux de tes héros comptent.'),
+    h('div', { class: 'coll-grid' }, list.map(id => heroCard(HERO[id], { onclick: () => { s.close(); playHero(id); } })))));
+}
+function playHero(id) {
+  if (stage) { stage.dispose(); stage = null; }
+  leaveKingdom();
+  const holder = h('div', { class: 'battle-holder' });
+  document.body.append(holder); document.body.classList.add('in-battle');
+  new HeroMode(holder, { heroId: id, level: heroLevel(P, id), world: worldOf(P), skin: P.skins.eq[id], onEnd: r => {
+    holder.remove(); document.body.classList.remove('in-battle');
+    const rec = r.wave > (P.records.hero || 0);
+    if (rec) P.records.hero = r.wave;
+    showResult({ mode: 'hero', result: 'hero', wave: r.wave, opp: '', myHp: 0, oppHp: 0, note: r.kills + ' monstres vaincus' + (rec ? ' · nouveau record !' : ''), reward: { gold: r.kills * 2 + r.wave * 10, crystals: r.wave >= 5 ? r.wave * 2 : 0 } });
+  } });
 }
 
 // ---------- Résultat ----------
 function showResult(r) {
   const rew = applyResult(P, r);
-  const title = r.result === 'win' ? 'Victoire !' : r.result === 'loss' ? 'Défaite' : 'Égalité';
+  const title = r.result === 'survival' || r.result === 'hero' ? 'Vague ' + (r.wave || 0) : r.result === 'win' ? 'Victoire !' : r.result === 'loss' ? 'Défaite' : 'Égalité';
   const bar = (v, cls) => h('div', { class: 'rbar ' + cls }, h('i', { style: { width: Math.round(v * 100) + '%' } }), h('span', {}, Math.round(v * 100) + ' %'));
   const page = h('div', { class: 'result ' + r.result },
     h('h1', {}, title),
     h('div', { class: 'rvs' },
-      h('div', {}, h('b', {}, P.name), h('small', {}, 'Ton Sanctuaire'), bar(r.myHp, 'blue')),
-      h('div', {}, h('b', {}, '🤖 ' + r.opp), h('small', {}, 'Sanctuaire ennemi'), bar(r.oppHp, 'red'))),
+      r.result === 'hero' ? h('div', {}, h('b', {}, P.name), h('small', {}, 'Vagues'), h('b', {}, r.wave)) : h('div', {}, h('b', {}, P.name), h('small', {}, 'Ton Sanctuaire'), bar(r.myHp, 'blue')),
+      r.result === 'survival' || r.result === 'hero' ? h('div', {}, h('b', {}, r.result === 'hero' ? 'Mode Héros' : 'Survie'), h('small', {}, 'Record'), h('b', {}, 'Vague ' + (r.result === 'hero' ? P.records.hero : P.records.survival || 0))) : h('div', {}, h('b', {}, '🤖 ' + r.opp), h('small', {}, 'Sanctuaire ennemi'), bar(r.oppHp, 'red'))),
+    r.note ? h('div', { class: 'banner-good' }, r.note) : null,
+    rew.extra ? h('div', { class: 'rchips' }, Object.entries(rew.extra).filter(([k, v]) => v).map(([k, v]) => h('span', { class: 'rchip' }, k === 'gold' ? icon('coin') : k === 'gems' ? icon('gem') : k === 'crystals' ? icon('crystal') : k === 'chest' ? chestIcon(v, 'xs') : '', k === 'chest' ? CHESTS[v].name : '+' + v))) : null,
     r.reason === 'forfeit' ? h('p', { class: 'muted' }, 'Abandon') : r.heart ? h('p', { class: 'muted' }, '✦ Tu tenais le Cœur de Mythe à la fin : +10 or') : null,
     h('div', { class: 'rewards' },
-      r.mode === 'arena' ? h('div', { class: 'rw' }, icon('trophy'), h('b', {}, (rew.trophies >= 0 ? '+' : '') + rew.trophies), h('small', {}, 'trophées')) : h('div', { class: 'rw' }, icon('summon'), h('b', {}, 'Entraînement'), h('small', {}, 'sans trophées')),
+      r.mode === 'arena' ? h('div', { class: 'rw' }, icon('trophy'), h('b', {}, (rew.trophies >= 0 ? '+' : '') + rew.trophies), h('small', {}, 'trophées')) : h('div', { class: 'rw' }, icon('summon'), h('b', {}, { training: 'Entraînement', campaign: 'Campagne', survival: 'Survie', event: 'Événement', tourney: 'Tournoi', hero: 'Mode Héros' }[r.mode] || 'Mode'), h('small', {}, 'sans trophées')),
       h('div', { class: 'rw' }, icon('coin'), h('b', {}, '+' + rew.gold), h('small', {}, 'or')),
       h('div', { class: 'rw' }, icon('star'), h('b', {}, '+' + rew.xp), h('small', {}, 'expérience'))),
+    rew.chest ? h('div', { class: 'banner-good row gap' }, chestIcon(rew.chest, 'xs'), CHESTS[rew.chest].name + ' gagné !') : (r.mode === 'arena' && r.result === 'win' ? h('p', { class: 'muted' }, 'Emplacements de coffres pleins : ouvre-en un pour en gagner d’autres.') : null),
     rew.lvlUp ? h('div', { class: 'banner-good' }, 'Niveau ' + P.lvl + ' ! +10 gemmes') : null,
     rew.newWorld ? h('div', { class: 'banner-good' }, 'Nouveau monde : ' + rew.newWorld.name + ' !') : null,
     rew.newHeroes.length ? h('div', { class: 'newcards' }, h('b', {}, 'Nouveaux héros débloqués !'), h('div', { class: 'mini-row' }, rew.newHeroes.map(id => h('div', { class: 'mini', style: { '--rc': RARITIES[HERO[id].rar].color } }, portraitImg(id), h('small', {}, HERO[id].name))))) : null,
@@ -220,7 +260,8 @@ function openHero(id) {
   sfx('click');
   const c = HERO[id], own = owned(P).includes(id), inDeck = P.deck.includes(id), F = FACTIONS[c.fac], R = RARITIES[c.rar];
   const max = { hp: 3600, dps: 260, spd: 2.4, range: 6 };
-  const dps = Math.round(c.dmg / c.hit * (c.count || 1));
+  const LV = Math.pow(1.1, heroLevel(P, id) - 1);
+  const dps = Math.round(c.dmg * LV / c.hit * (c.count || 1));
   const statBar = (k, v, m, txt) => h('div', { class: 'sbar' }, h('small', {}, k), h('div', { class: 'sb' }, h('i', { style: { width: Math.min(100, v / m * 100) + '%' } })), h('b', {}, txt));
   const cv = h('canvas', { class: 'hd-3d' });
   let sc = null;
@@ -240,19 +281,20 @@ function openHero(id) {
       h('p', { class: 'lore' }, '« ' + c.lore + ' »'),
       h('div', { class: 'ability' }, h('span', { class: 'ab-ic' }, icon('star')), h('div', {}, h('b', {}, c.ability[0]), h('small', {}, c.ability[1]))),
       h('div', { class: 'sbars' },
-        statBar('Vie', c.hp * (c.count || 1), max.hp, c.hp + ((c.count || 1) > 1 ? ' ×' + c.count : '')),
+        statBar('Vie', c.hp * LV * (c.count || 1), max.hp, Math.round(c.hp * LV) + ((c.count || 1) > 1 ? ' ×' + c.count : '')),
         statBar('Dégâts / s', dps, max.dps, dps + (c.splash ? ' (zone)' : '')),
         c.type === 'unit' ? statBar('Vitesse', c.spd, max.spd, c.spd >= 1.8 ? 'Très rapide' : c.spd >= 1.4 ? 'Rapide' : c.spd >= 1 ? 'Moyenne' : 'Lente') : statBar('Durée', c.life, 60, c.life + ' s'),
         statBar('Portée', c.range, max.range, c.range <= 1.2 ? 'Mêlée' : c.range + ' cases'),
         h('div', { class: 'sbar' }, h('small', {}, 'Cible'), h('b', { class: 'wide' }, TGT[c.tgt]))),
+      heroProgress(id, () => { close(); openHero(id); render(); }),
       h('div', { class: 'evo' }, h('h4', {}, 'Évolution en combat'),
         h('div', { class: 'evo-row' }, [1, 2, 3].map(st => h('div', { class: 'evo-st' }, h('b', {}, '★'.repeat(st)), h('small', {}, '×' + STAR_MULT[st] + ' puissance')))),
-        h('p', { class: 'muted' }, 'Sur le Cercle d’Invocation, glisse un héros sur un héros identique de même rang pour le faire évoluer. Niveaux permanents et apparences : phase 5.')),
+        h('p', { class: 'muted' }, 'Sur le Cercle d’Invocation, glisse un héros sur un héros identique de même rang pour le faire évoluer.')),
       !own ? h('p', { class: 'tip lock' }, 'Se débloque dans le monde « ' + WORLDS.find(w => (UNLOCKS[w.id] || []).includes(id)).name + ' »')
         : inDeck ? h('div', { class: 'row gap' }, h('button', { class: 'btn ghost grow', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Mettre en vedette'), h('span', { class: 'tip grow' }, '✓ Dans ton deck'))
           : h('div', { class: 'row gap' }, h('button', { class: 'btn ghost', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Vedette'), h('button', { class: 'btn big gold grow', onclick: () => { swapIn = id; tab = 'heroes'; close(); render(); } }, 'Mettre dans le deck'))));
   document.body.append(page);
-  requestAnimationFrame(() => { if (stage) stage.spin = 0; sc = new Showcase(cv, { world: worldOf(P).key, heroId: id, mode: 'hero' }); });
+  requestAnimationFrame(() => { if (stage) stage.spin = 0; sc = new Showcase(cv, { world: worldOf(P).key, heroId: id, mode: 'hero', skin: P.skins.eq[id] }); });
 }
 
 // ---------- Mondes ----------
