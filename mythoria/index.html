@@ -1,28 +1,23 @@
 <!doctype html>
-<html lang="fr" data-version="2026-11-14.2">
+<html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>MYTHORIA</title>
-<meta name="description" content="MYTHORIA — jeu de stratégie médiéval-fantastique : cartes, héros, combats en temps réel.">
-<meta name="theme-color" content="#120c26">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cinzel+Decorative:wght@700;900&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
-<link rel="stylesheet" href="styles.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MYTHORIA a déménagé</title>
+<meta http-equiv="refresh" content="1; url=https://nicolas06061997.github.io/mythoria-game/">
+<style>body{margin:0;height:100vh;display:grid;place-content:center;text-align:center;background:#0d0820;color:#f7f1ff;font-family:system-ui,sans-serif;padding:20px}a{color:#ffcf5c;font-weight:800}</style>
 </head>
 <body>
-<div id="splash"><div class="logo">MYTHORIA</div><small>Chargement…</small></div>
-<div id="app"></div>
-<div id="upd"><div><b>✨ Nouvelle mise à jour disponible</b><small></small></div><button id="updBtn" class="btn gold small">Mettre à jour</button></div>
-<noscript>MYTHORIA a besoin de JavaScript.</noscript>
-<script type="module" src="src/client/main.js"></script>
+<h1>MYTHORIA a déménagé ✨</h1>
+<p>Ta progression est conservée. Redirection…</p>
+<p><a href="https://nicolas06061997.github.io/mythoria-game/">Ouvrir MYTHORIA</a></p>
+<script>
+// L'ancienne version installée disparaît proprement (service worker et cache), puis on part à la nouvelle adresse.
+(async () => {
+  try { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) if (r.scope.includes('/La-Fine-Crasse/mythoria/')) await r.unregister(); } catch (e) {}
+  try { for (const k of await caches.keys()) if (k.startsWith('mythoria-')) await caches.delete(k); } catch (e) {}
+  location.replace('https://nicolas06061997.github.io/mythoria-game/');
+})();
+</script>
 </body>
 </html>
