@@ -67,7 +67,7 @@ En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/fantomes/ (a remplac
 
 ## Quatrième jeu : MYTHORIA (dossier `mythoria/`)
 Grand jeu de stratégie fantastique 3D multijoueur (cahier des charges du 13/11/2026, plan en 7 phases : `mythoria/docs/ROADMAP.md`).
-En ligne : https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ . L'utilisateur voulait un dépôt « mythoria-game » : impossible à créer depuis la session ; le dossier est autonome et peut y être déplacé.
+**Depuis le 14/11, MYTHORIA a son propre dépôt `nicolas06061997/mythoria-game` (https://nicolas06061997.github.io/mythoria-game/) : c'est là qu'il faut le modifier désormais.** Le dossier `mythoria/` ci-dessous est l'ancienne copie (même historique, publiée sur https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/) ; la même origine github.io partage la sauvegarde localStorage entre les deux adresses.
 - Refonte 3D du 13/11 (l'utilisateur ne voulait plus d'un clone de Clash Royale, voulait une qualité proche de TFT) : concept « Les Failles » (île flottante, 1 Sanctuaire par camp, Cœur de Mythe au centre, Cercle d'Invocation 5 socles : invoquer 2 éther / fusionner ★3 / glisser sur l'île, 1 sortilège par deck via jauge d'Éveil). Détails et limites honnêtes : `mythoria/docs/ARCHITECTURE.md`.
 - three.js r160 dans `mythoria/vendor/` (import map dans index.html). Modèles CC0 KayKit (même squelette, banque `assets/models/heroes/anims.glb`) + Quaternius ; créatures faites par le code dans `three/procedural.js`. Crédits : `mythoria/CREDITS.md`.
 - Règles partagées `src/shared/` (content.js : HEROES/SPELLS/WORLDS/UNLOCKS ; sim.js déterministe ; ai.js). 3D : `src/client/three/` ; menus : `src/client/ui/app.js` ; combat : `src/client/battle.js`.
